@@ -29,18 +29,7 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import {
-  GeneralLedgerAccountApi,
-  JournalEntriesApi,
-  OfficesApi,
-  type GetGLAccountsResponse,
-  type GetOfficesResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const officeApi = new OfficesApi(getConfiguration())
-const glApi = new GeneralLedgerAccountApi(getConfiguration())
-const journalEntryApi = new JournalEntriesApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 type Row = {
   id: number | string
@@ -58,8 +47,8 @@ type Row = {
 const SearchJournalEntry = () => {
   const navigate = useNavigate()
 
-  const [_offices, setOffices] = useState<GetOfficesResponse[] | null>(null) // Reserved for future use
-  const [_glAccounts, setGlAccounts] = useState<GetGLAccountsResponse[]>([]) // Reserved for future use
+  const [_offices, setOffices] = useState<unknown[]>(null!) // Reserved for future use
+  const [_glAccounts, setGlAccounts] = useState<unknown[]>([]) // Reserved for future use
 
   const [entries, setEntries] = useState<Row[]>([]) // <-- you were missing this
   const [searchTerm, setSearchTerm] = useState('')
@@ -70,16 +59,11 @@ const SearchJournalEntry = () => {
     ;(async () => {
       try {
         const [officesRes, glAccountsRes, journalRes] = await Promise.all([
-          officeApi.retrieveOffices(),
-          glApi.retrieveAllAccounts(
-            undefined, // type
-            undefined, // searchParam
-            1, // usage: ONLY accounts used for journal entries
-            true, // manualEntriesAllowed
-            false // disabled
-          ),
-          // list journal entries; method names differ between SDKs, but most expose retrieveAll()
-          journalEntryApi.retrieveAll1(),
+          fineract.get('/v1/offices'),
+          fineract.get('/v1/glaccounts', {
+            params: { usage: 1, manualEntriesAllowed: true, disabled: false },
+          }),
+          fineract.get('/v1/journalentries'),
         ])
 
         setOffices(officesRes.data ?? [])

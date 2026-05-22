@@ -11,8 +11,6 @@ import { loginUser } from '@/pages/login/loginSlice'
 import { type RootState, type AppDispatch } from '@/app/store'
 
 import mainImg from '@/assets/images/cover_image_resized.webp'
-import mifosLogoLight from '@/assets/images/mifos_lg-logo.png'
-import mifosLogoDark from '@/assets/images/image-removebg-preview-transparent.png'
 
 import { Sun, Moon, Eye, EyeOff } from 'lucide-react'
 
@@ -39,6 +37,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation, Trans } from 'react-i18next'
 import { LanguageSwitcher } from '@/components/custom/language-switcher/LanguageSwitcher'
 import { envConfig } from '@/lib/env-config'
+import { BrandMark } from '@/components/custom/brand/BrandMark'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -101,48 +100,55 @@ const Login = () => {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen w-full">
-      <div className="relative hidden lg:flex lg:w-[70%] h-[400px] lg:h-auto">
+    <div className="flex min-h-screen w-full flex-col bg-zinc-950 lg:flex-row">
+      <div className="relative hidden h-[400px] overflow-hidden lg:flex lg:h-auto lg:w-[64%]">
         <img
           src={mainImg}
           alt="mainImg"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black opacity-60"></div>
-        <div className="absolute inset-0 flex flex-col justify-center text-white z-10 px-8 lg:px-16">
-          <h1 className="text-4xl lg:text-6xl font-bold mb-4">Mifos X</h1>
-          <p className="text-lg lg:text-2xl max-w-[100%]">
-            <Trans
-              i18nKey="hero.description"
-              ns="auth"
-              components={{
-                mifosLink: (
-                  <a href="https://mifos.org/" className="underline" />
-                ),
-                communityLink: (
-                  <a
-                    href="https://mifos.org/resources/community/"
-                    className="underline"
-                  />
-                ),
-              }}
-            />{' '}
-            <a
-              href="https://mifos.org/take-action/volunteer/"
-              className="underline"
-            >
-              {t('auth:hero.getInvolved')}
-            </a>
-          </p>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(9,9,11,0.86),rgba(9,9,11,0.54)),radial-gradient(circle_at_20%_20%,rgba(16,116,185,0.34),transparent_28rem)]"></div>
+        <div className="absolute inset-0 z-10 flex flex-col justify-between px-10 py-10 text-white xl:px-16">
+          <div className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] backdrop-blur">
+            Financial inclusion platform
+          </div>
+          <div className="max-w-4xl space-y-5">
+            <h1 className="text-5xl font-semibold tracking-normal xl:text-7xl">
+              X-Plug
+            </h1>
+            <p className="max-w-3xl text-lg leading-8 text-white/85 xl:text-2xl xl:leading-10">
+              <Trans
+                i18nKey="hero.description"
+                ns="auth"
+                components={{
+                  mifosLink: (
+                    <a href="https://mifos.org/" className="underline" />
+                  ),
+                  communityLink: (
+                    <a
+                      href="https://mifos.org/resources/community/"
+                      className="underline"
+                    />
+                  ),
+                }}
+              />{' '}
+              <a
+                href="https://mifos.org/take-action/volunteer/"
+                className="underline"
+              >
+                {t('auth:hero.getInvolved')}
+              </a>
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col w-full min-h-screen lg:w-[30%] bg-white dark:bg-zinc-900 px-4 py-6 sm:px-10 justify-between">
-        <div className="lg:h-[10%] flex flex-wrap gap-2 text-center justify-center">
+      <div className="flex min-h-screen w-full flex-col justify-between bg-zinc-50 px-4 py-6 dark:bg-zinc-950 sm:px-8 lg:w-[36%]">
+        <div className="flex flex-wrap justify-center gap-2 text-center lg:justify-end">
           {!isDockerProxy && (
             <Select value={server} onValueChange={handleServerChange}>
-              <SelectTrigger className="w-[160px]">
-                <Label className=" text-zinc-900 dark:text-white">
+              <SelectTrigger className="w-[170px] bg-white shadow-sm dark:bg-zinc-900">
+                <Label className="text-zinc-900 dark:text-white">
                   {t('auth:login.server')}
                 </Label>
                 <SelectValue placeholder="https://localhost:8443" />
@@ -166,9 +172,13 @@ const Login = () => {
             </Select>
           )}
 
-          <LanguageSwitcher className="w-[140px] dark:bg-zinc-800 dark:text-white" />
+          <LanguageSwitcher className="w-[140px] bg-white shadow-sm dark:bg-zinc-900 dark:text-white" />
 
-          <Button onClick={toggleTheme} variant="outline">
+          <Button
+            onClick={toggleTheme}
+            variant="outline"
+            className="bg-white shadow-sm dark:bg-zinc-900"
+          >
             {theme === 'light' ? (
               <Moon className="w-5 h-5" />
             ) : (
@@ -177,15 +187,15 @@ const Login = () => {
           </Button>
         </div>
 
-        <div className="lg:h-[90%] flex flex-col items-center w-full max-w-md mx-auto">
-          <img
-            src={theme === 'dark' ? mifosLogoDark : mifosLogoLight}
-            alt="mifosLogo"
-            className="h-[130px] m-6"
+        <div className="mx-auto flex w-full max-w-md flex-col items-center">
+          <BrandMark
+            stacked
+            markClassName="size-20 text-xl"
+            className="my-8 text-zinc-950 dark:text-zinc-50"
           />
 
           <Select value={tenant} onValueChange={handleTenantChange}>
-            <SelectTrigger className="w-full max-w-xs">
+            <SelectTrigger className="w-full max-w-xs bg-white shadow-sm dark:bg-zinc-900">
               <Label className="text-zinc-900 dark:text-white">
                 {t('auth:login.tenant')}
               </Label>
@@ -200,7 +210,7 @@ const Login = () => {
 
           <form
             onSubmit={handleSubmit}
-            className="w-full max-w-xs flex flex-col items-center mt-6"
+            className="mt-6 flex w-full max-w-xs flex-col items-center rounded-lg border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
           >
             <Input
               name="username"
@@ -208,7 +218,7 @@ const Login = () => {
               onChange={handleChange}
               type="text"
               placeholder={t('auth:login.username')}
-              className="dark:bg-zinc-800 dark:text-white mb-4"
+              className="mb-4 h-10 dark:bg-zinc-950 dark:text-white"
             />
 
             <div className="relative w-full mb-4">
@@ -218,7 +228,7 @@ const Login = () => {
                 onChange={handleChange}
                 type={showPassword ? 'text' : 'password'}
                 placeholder={t('auth:login.password')}
-                className="dark:bg-zinc-800 dark:text-white pr-10"
+                className="h-10 pr-10 dark:bg-zinc-950 dark:text-white"
               />
               <Button
                 type="button"
@@ -254,7 +264,7 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full text-base bg-sky-600 hover:bg-sky-700 cursor-pointer"
+              className="w-full cursor-pointer bg-primary text-base text-white hover:bg-primary/90"
               disabled={loading}
             >
               {loading ? t('auth:login.submitting') : t('auth:login.submit')}
@@ -350,14 +360,14 @@ const Login = () => {
           </div>
         </div>
 
-        <div className="lg:h-[10%] flex flex-col justify-center items-center mt-10 text-zinc-700 dark:text-zinc-300 text-sm">
+        <div className="mt-10 flex flex-col items-center justify-center text-sm text-zinc-600 dark:text-zinc-300">
           <p>
             <span className="font-semibold">{t('common:info.mifos')}</span>{' '}
             250518 - cf693b0f
           </p>
           <p>
             <span className="font-semibold">{t('common:info.fineract')}</span>{' '}
-            https://localhost:8443
+            {isDockerProxy ? 'same-origin proxy' : server}
           </p>
         </div>
       </div>

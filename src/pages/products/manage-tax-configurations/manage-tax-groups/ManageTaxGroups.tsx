@@ -29,14 +29,15 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { TaxGroupApi, type GetTaxesGroupResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API client for Tax Groups
-const taxApi = new TaxGroupApi(getConfiguration())
+interface TaxGroup {
+  id: number
+  name?: string
+}
 
 const ManageTaxGroups = () => {
-  const [taxGroups, setTaxGroups] = useState<GetTaxesGroupResponse[]>([]) // list of tax groups
+  const [taxGroups, setTaxGroups] = useState<TaxGroup[]>([]) // list of tax groups
   const [searchTerm, setSearchTerm] = useState('') // filter text
   const [page, setPage] = useState(1) // current page for pagination
   const [itemsPerPage, setItemsPerPage] = useState(10) // page size
@@ -46,8 +47,8 @@ const ManageTaxGroups = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await taxApi.retrieveAllTaxGroups()
-        setTaxGroups(res.data || [])
+        const { data } = await fineract.get('/v1/taxes/group')
+        setTaxGroups(data || [])
       } catch (err) {
         console.error('Failed to fetch tax groups', err)
       }

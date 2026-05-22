@@ -28,15 +28,41 @@ import {
   faTrash,
   faStop,
 } from '@fortawesome/free-solid-svg-icons'
-import {
-  ClientChargesApi,
-  type GetClientsChargesPageItems,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { formatDate } from '@/lib/date-utils'
 import { useTranslation } from 'react-i18next'
 
-const chargeApi = new ClientChargesApi(getConfiguration())
+interface ChargeCodeValue {
+  id?: number
+  code?: string
+  value?: string
+}
+
+interface ChargeCurrency {
+  code?: string
+  name?: string
+  decimalPlaces?: number
+  displaySymbol?: string
+}
+
+interface ClientCharge {
+  id?: number
+  clientId?: number
+  chargeId?: number
+  name?: string
+  currency?: ChargeCurrency
+  amount?: number
+  amountPaid?: number
+  amountWaived?: number
+  amountOutstanding?: number
+  chargeTimeType?: ChargeCodeValue
+  chargeCalculationType?: ChargeCodeValue
+  dueDate?: number[]
+  isPaid?: boolean
+  isWaived?: boolean
+  isActive?: boolean
+}
+
 const ViewCharge = () => {
   const navigate = useNavigate()
   const { clientId, chargeId } = useParams<{
@@ -44,7 +70,7 @@ const ViewCharge = () => {
     chargeId: string
   }>()
 
-  const [charge, setCharge] = useState<GetClientsChargesPageItems>()
+  const [charge, setCharge] = useState<ClientCharge>()
   const { t } = useTranslation('clients')
   const { t: tc } = useTranslation('common')
 
@@ -52,11 +78,10 @@ const ViewCharge = () => {
     if (!clientId || !chargeId) return
     const fetchDetails = async () => {
       try {
-        const res = await chargeApi.retrieveClientCharge(
-          Number(clientId),
-          Number(chargeId)
+        const { data } = await fineract.get<ClientCharge>(
+          `/v1/clients/${clientId}/charges/${chargeId}`
         )
-        setCharge(res.data)
+        setCharge(data)
       } catch (err) {
         console.error("Couldn't fetch charge details", err)
       }

@@ -9,8 +9,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-import { RunReportsApi, CentersApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { formatDate } from '@/lib/date-utils'
 
 import {
@@ -21,9 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-
-const runReportApi = new RunReportsApi(getConfiguration())
-const centersApi = new CentersApi(getConfiguration())
 
 const CentersGeneralTab = () => {
   const { id } = useParams()
@@ -42,33 +38,21 @@ const CentersGeneralTab = () => {
         setLoading(true)
 
         // Fetch summary counts for this center
-        const sumRes = await runReportApi.runReport(
-          'GroupSummaryCounts',
-          false,
-          {
-            params: {
-              R_groupId: Number(id),
-              genericResultSet: false,
-            },
-          }
-        )
-        const sumData = sumRes.data as Record<string, unknown> | undefined
-        const sumDataArr = sumData?.data as
+        const [sumRes, centerRes] = await Promise.all([
+          fineract.get('/v1/runreports/GroupSummaryCounts', {
+            params: { R_groupId: Number(id), genericResultSet: false },
+          }),
+          fineract.get(`/v1/centers/${id}`, {
+            params: { associations: 'groupMembers' },
+          }),
+        ])
+
+        const sumDataArr = sumRes.data?.data as
           | Record<string, unknown>[]
           | undefined
         setSummary(sumDataArr?.[0] ?? {})
 
-        // Fetch groups associated with this center
-        const centerRes = await centersApi.retrieveOne14(
-          Number(id),
-          undefined,
-          {
-            params: { associations: 'groupMembers' },
-          }
-        )
-        const centerData = centerRes?.data as
-          | Record<string, unknown>
-          | undefined
+        const centerData = centerRes.data as Record<string, unknown> | undefined
         setGroups((centerData?.groupMembers as Record<string, unknown>[]) ?? [])
       } catch (e) {
         console.error('Error fetching general tab data', e)

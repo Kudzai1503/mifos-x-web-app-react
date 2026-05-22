@@ -11,6 +11,7 @@
   "createGuarantor": "Crea garante",
   "errors": {
     "failedApproveClients": "Impossibile approvare uno o più clienti.",
+    "failedToLoadClients": "Impossibile caricare i clienti. Riprova.",
     "failedLoadCenters": "Impossibile caricare i centri. Riprova.",
     "failedLoadGroups": "Impossibile caricare i gruppi. Riprova.",
     "noClientsSelected": "Nessun cliente selezionato per l'approvazione."

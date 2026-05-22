@@ -7,12 +7,7 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import type {
-  GetLoansLoanIdResponse,
-  GetLoansLoanIdRepaymentPeriod,
-} from '@/fineract-api'
-import { LoansApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import {
   Table,
   TableBody,
@@ -23,7 +18,35 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 
-const loansApi = new LoansApi(getConfiguration())
+type RepaymentPeriod = {
+  period?: number
+  daysInPeriod?: number
+  dueDate?: string
+  obligationsMetOnDate?: string
+  principalLoanBalanceOutstanding?: number
+  principalDue?: number
+  interestDue?: number
+  feeChargesDue?: number
+  penaltyChargesDue?: number
+  totalDueForPeriod?: number
+  totalPaidForPeriod?: number
+  totalPaidInAdvanceForPeriod?: number
+  totalPaidLateForPeriod?: number
+  totalOutstandingForPeriod?: number
+}
+
+type LoanData = {
+  currency?: { code?: string }
+  repaymentSchedule?: {
+    periods?: RepaymentPeriod[]
+    totalPrincipalDisbursed?: number
+  }
+  timeline?: {
+    actualDisbursementDate?: string
+    expectedDisbursementDate?: string
+  }
+  principal?: number
+}
 
 const fmtDate = (d: string | null | undefined) => {
   if (!d) return '—'
@@ -33,7 +56,7 @@ const fmtDate = (d: string | null | undefined) => {
 
 const LoansRepaymentScheduleTab = () => {
   const { loanId } = useParams()
-  const [loan, setLoan] = useState<GetLoansLoanIdResponse | null>(null)
+  const [loan, setLoan] = useState<LoanData | null>(null)
   const [loading, setLoading] = useState(true)
 
   // fetch loan details
@@ -41,9 +64,10 @@ const LoansRepaymentScheduleTab = () => {
     ;(async () => {
       try {
         if (!loanId) return
-        const loanIdNum = Number(loanId)
-        const res = await loansApi.retrieveLoan(loanIdNum)
-        setLoan(res.data)
+        const { data } = await fineract.get(
+          `/v1/loans/${loanId}?associations=repaymentSchedule`
+        )
+        setLoan(data as LoanData)
       } catch (err) {
         console.error('Failed to fetch loan', err)
       } finally {
@@ -65,7 +89,7 @@ const LoansRepaymentScheduleTab = () => {
 
   // repayment schedule
   const schedule = loan?.repaymentSchedule
-  const rawPeriods: GetLoansLoanIdRepaymentPeriod[] = useMemo(
+  const rawPeriods: RepaymentPeriod[] = useMemo(
     () => schedule?.periods ?? [],
     [schedule?.periods]
   )

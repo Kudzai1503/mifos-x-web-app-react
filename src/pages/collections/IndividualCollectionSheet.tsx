@@ -15,30 +15,29 @@ import { Input } from '@/components/ui/input'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import {
-  CollectionSheetApi,
-  OfficesApi,
-  StaffApi,
-  type GetOfficesResponse,
-  type StaffData,
-  type PostCollectionSheetResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { SearchIcon } from 'lucide-react'
 
-// Create API instances
-const officeApi = new OfficesApi(getConfiguration())
-const staffApi = new StaffApi(getConfiguration())
-const collectionSheetApi = new CollectionSheetApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+}
+
+interface StaffItem {
+  id?: number
+  displayName?: string
+}
 
 const IndividualCollectionSheet = () => {
   const navigate = useNavigate()
 
-  const [offices, setOffices] = useState<GetOfficesResponse[] | null>(null)
-  const [staff, setStaff] = useState<StaffData[] | null>(null)
-  const [_collectionSheet, setCollectionSheet] =
-    useState<PostCollectionSheetResponse | null>(null) // Reserved for future use
+  const [offices, setOffices] = useState<Office[] | null>(null)
+  const [staff, setStaff] = useState<StaffItem[] | null>(null)
+  const [_collectionSheet, setCollectionSheet] = useState<Record<
+    string,
+    unknown
+  > | null>(null) // Reserved for future use
 
   const [formData, setFormData] = useState({
     office: '',
@@ -50,8 +49,8 @@ const IndividualCollectionSheet = () => {
   useEffect(() => {
     const fetchDropdowns = async () => {
       try {
-        const officesRes = await officeApi.retrieveOffices()
-        setOffices(officesRes.data)
+        const { data } = await fineract.get('/v1/offices')
+        setOffices(data ?? [])
       } catch (err) {
         console.error('Failed to fetch offices', err)
       }
@@ -61,8 +60,10 @@ const IndividualCollectionSheet = () => {
 
   const fetchStaff = async (officeId: string) => {
     try {
-      const res = await staffApi.retrieveAll16(Number(officeId))
-      setStaff(res.data)
+      const { data } = await fineract.get('/v1/staff', {
+        params: { officeId: Number(officeId) },
+      })
+      setStaff(data ?? [])
     } catch (err) {
       console.error('Failed to fetch staff', err)
     }
@@ -85,12 +86,12 @@ const IndividualCollectionSheet = () => {
     }
 
     try {
-      const response = await collectionSheetApi.generateCollectionSheet(
-        payload,
-        'generateCollectionSheet'
+      const { data } = await fineract.post(
+        '/v1/collectionsheet?command=generateCollectionSheet',
+        payload
       )
 
-      setCollectionSheet(response.data)
+      setCollectionSheet(data)
     } catch (err) {
       console.error('Failed to generate collection sheet', err)
     }

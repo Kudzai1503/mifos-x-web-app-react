@@ -14,11 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-
-import { AdhocQueryApiApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const adhocQueryApi = new AdhocQueryApiApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 const CreateAdhocQuery = () => {
   const navigate = useNavigate()
@@ -38,7 +34,7 @@ const CreateAdhocQuery = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await adhocQueryApi.createAdHocQuery({
+      await fineract.post('/v1/adhocquery', {
         name: formData.name,
         query: formData.query,
         tableName: formData.tableName,

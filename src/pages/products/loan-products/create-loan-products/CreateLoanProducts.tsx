@@ -22,18 +22,12 @@ import LoanProductSettingsStep from './create-loan-products-stepper/LoanProductS
 import LoanProductTermsStep from './create-loan-products-stepper/LoanProductTermsStep'
 import LoanProductChargesStep from './create-loan-products-stepper/LoanProductChargesStep'
 import LoanProductAccountingStep from './create-loan-products-stepper/LoanProductAccountingStep'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  LoanProductsApi,
-  type GetLoanProductsTemplateResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 import { useEffect, useState } from 'react'
 
-const loanProductApi = new LoanProductsApi(getConfiguration())
-
 const CreateLoanProducts = () => {
-  const [loanProducts, setLoanProducts] =
-    useState<GetLoanProductsTemplateResponse>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [loanProducts, setLoanProducts] = useState<any>()
   const [_formData, _setFormData] = useState({
     // Reserved for future use
     fund: '', // only fund for now
@@ -42,8 +36,8 @@ const CreateLoanProducts = () => {
   useEffect(() => {
     const fetchLoanProductDetails = async () => {
       try {
-        const response = await loanProductApi.retrieveTemplate11()
-        setLoanProducts(response.data)
+        const { data } = await fineract.get('/v1/loanproducts/template')
+        setLoanProducts(data)
       } catch (err) {
         console.error('Failed to fetch Loan Products', err)
       }

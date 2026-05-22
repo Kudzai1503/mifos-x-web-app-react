@@ -16,32 +16,46 @@ import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import {
-  GeneralLedgerAccountApi,
-  type GetGLAccountsTemplateResponse,
-  type GLAccountData,
-  type CodeValueData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-//gl accounts base api
-const glApi = new GeneralLedgerAccountApi(getConfiguration())
+interface AccountOption {
+  id?: number
+  name?: string
+}
+
+interface CodeOption {
+  id?: number
+  name?: string
+}
+
+interface GlTemplate {
+  accountTypeOptions?: { id?: number; value?: string }[]
+  usageOptions?: { id?: number; value?: string }[]
+  assetHeaderAccountOptions?: AccountOption[]
+  liabilityHeaderAccountOptions?: AccountOption[]
+  equityHeaderAccountOptions?: AccountOption[]
+  expenseHeaderAccountOptions?: AccountOption[]
+  allowedAssetsTagOptions?: CodeOption[]
+  allowedLiabilitiesTagOptions?: CodeOption[]
+  allowedEquityTagOptions?: CodeOption[]
+  allowedIncomeTagOptions?: CodeOption[]
+  allowedExpensesTagOptions?: CodeOption[]
+}
 
 const EditGlAccounts = () => {
   const navigate = useNavigate()
   const { id } = useParams()
 
   //gives a template for editing
-  const [template, setTemplate] =
-    useState<GetGLAccountsTemplateResponse | null>(null)
+  const [template, setTemplate] = useState<GlTemplate | null>(null)
 
   //stores the state for account type and usage
   const [selectedAccountType, setSelectedAccountType] = useState<string>('')
   const [selectedAccountUsage, setSelectedAccountUsage] = useState<string>('')
 
   //stores the state for parent and tag options
-  const [parentOptions, setParentOptions] = useState<GLAccountData[]>([])
-  const [tagOptions, setTagOptions] = useState<CodeValueData[]>([])
+  const [parentOptions, setParentOptions] = useState<AccountOption[]>([])
+  const [tagOptions, setTagOptions] = useState<CodeOption[]>([])
 
   //stores the state for manual entries
 
@@ -61,8 +75,7 @@ const EditGlAccounts = () => {
   useEffect(() => {
     const fetchGlAccounts = async () => {
       try {
-        const response = await glApi.retreiveAccount(Number(id))
-        const acc = response.data
+        const { data: acc } = await fineract.get(`/v1/glaccounts/${id}`)
 
         setFormData({
           type: acc.type?.id?.toString() ?? '',
@@ -85,8 +98,8 @@ const EditGlAccounts = () => {
   useEffect(() => {
     const fetchTemplate = async () => {
       try {
-        const response = await glApi.retrieveNewAccountDetails()
-        setTemplate(response.data)
+        const { data } = await fineract.get('/v1/glaccounts/template')
+        setTemplate(data)
       } catch (err) {
         console.error('Failed to get gl Template', err)
       }
@@ -145,7 +158,7 @@ const EditGlAccounts = () => {
     }
 
     try {
-      await glApi.updateGLAccount1(Number(id), {
+      await fineract.put(`/v1/glaccounts/${id}`, {
         name: formData.name,
         glCode: formData.glCode,
         type: parseInt(formData.type),
@@ -256,9 +269,7 @@ const EditGlAccounts = () => {
               selectPlaceholder="Select parent (optional)"
               selectOptions={(parentOptions || [])
                 .filter(
-                  (
-                    option
-                  ): option is GLAccountData & { id: number; name: string } =>
+                  (option): option is { id: number; name: string } =>
                     option.id !== undefined && option.name !== undefined
                 )
                 .map(option => ({
@@ -275,9 +286,7 @@ const EditGlAccounts = () => {
               selectPlaceholder="Select tag (optional)"
               selectOptions={(tagOptions || [])
                 .filter(
-                  (
-                    option
-                  ): option is CodeValueData & { id: number; name: string } =>
+                  (option): option is { id: number; name: string } =>
                     option.id !== undefined && option.name !== undefined
                 )
                 .map(option => ({

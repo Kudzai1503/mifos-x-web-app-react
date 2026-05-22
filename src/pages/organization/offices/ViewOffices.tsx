@@ -12,23 +12,28 @@ import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons'
-import { OfficesApi, type GetOfficesResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { format } from 'date-fns'
 
-const officesApi = new OfficesApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+  externalId?: string
+  openingDate?: number[]
+  nameDecorated?: string
+}
 
 const ViewOffices = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [office, setOffice] = useState<GetOfficesResponse>()
+  const [office, setOffice] = useState<Office>()
 
   // fetch office details
   useEffect(() => {
     const fetchOffice = async () => {
       try {
-        const res = await officesApi.retrieveOffice(Number(id))
-        setOffice(res.data)
+        const { data } = await fineract.get(`/v1/offices/${id}`)
+        setOffice(data)
       } catch (err) {
         console.error('Failed to fetch office', err)
       }

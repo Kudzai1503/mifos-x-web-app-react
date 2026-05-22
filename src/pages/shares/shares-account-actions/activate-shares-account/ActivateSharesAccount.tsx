@@ -8,6 +8,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -29,8 +31,17 @@ const ActivateSharesAccount = () => {
     }
   }
 
-  const onSubmit = () => {
-    backToAccount()
+  const onSubmit = async () => {
+    try {
+      await fineract.post(
+        `/v1/accounts/share/${sharesAccountId}?command=activate`,
+        { activatedDate }
+      )
+      navigate(-1)
+    } catch (e) {
+      console.error('Activate failed', e)
+      alert('Activate failed')
+    }
   }
 
   return (

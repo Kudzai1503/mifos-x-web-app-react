@@ -16,22 +16,23 @@ import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import {
-  StaffApi,
-  UsersApi,
-  type GetUsersResponse,
-  type GetUsersTemplateResponse,
-  type StaffData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const userApi = new UsersApi(getConfiguration())
-const staffApi = new StaffApi(getConfiguration())
+interface UserTemplate {
+  allowedOffices?: { id?: number; name?: string }[]
+  availableRoles?: { id?: number; name?: string }[]
+}
+
+interface StaffItem {
+  id?: number
+  displayName?: string
+  officeId?: number
+}
 
 const EditUsers = () => {
-  const [users, setUsers] = useState<GetUsersTemplateResponse>()
-  const [staff, setStaff] = useState<StaffData[] | null>(null)
-  const [_user, setUser] = useState<GetUsersResponse | null>(null) // Reserved for future use: _user
+  const [users, setUsers] = useState<UserTemplate>()
+  const [staff, setStaff] = useState<StaffItem[] | null>(null)
+  const [_user, setUser] = useState<Record<string, unknown> | null>(null) // Reserved for future use: _user
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -49,8 +50,8 @@ const EditUsers = () => {
 
   // fetch template
   useEffect(() => {
-    userApi
-      .template22()
+    fineract
+      .get('/v1/users/template')
       .then(res => setUsers(res.data))
       .catch(console.error)
   }, [])
@@ -58,8 +59,8 @@ const EditUsers = () => {
   // fetch staff list when office changes
   useEffect(() => {
     if (!formData.office) return
-    staffApi
-      .retrieveAll16()
+    fineract
+      .get('/v1/staff')
       .then(res => setStaff(res.data || []))
       .catch(console.error)
   }, [formData.office])
@@ -67,8 +68,8 @@ const EditUsers = () => {
   // fetch user details for editing
   useEffect(() => {
     if (!id) return
-    userApi
-      .retrieveOne31(Number(id))
+    fineract
+      .get(`/v1/users/${id}`)
       .then(res => {
         const data = res.data
         setUser(data)

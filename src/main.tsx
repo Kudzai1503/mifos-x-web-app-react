@@ -12,14 +12,15 @@ import './lib/i18n'
 import App from './App.tsx'
 import { store } from './app/store'
 import { Provider } from 'react-redux'
+import { XPlugLogoLoader } from './components/custom/loading/XPlugLogoLoader'
 
 createRoot(document.getElementById('root')!).render(
   <Provider store={store}>
     <StrictMode>
       <Suspense
         fallback={
-          <div className="flex items-center justify-center h-screen">
-            Loading...
+          <div className="flex h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+            <XPlugLogoLoader label="Loading X-Plug" />
           </div>
         }
       >

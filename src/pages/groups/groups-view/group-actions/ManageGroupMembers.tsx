@@ -13,13 +13,15 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 
-import { GroupsApi, type GetGroupsGroupIdResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-const groupsApi = new GroupsApi(getConfiguration())
+interface GroupData {
+  id?: number
+  name?: string
+}
 
 type LiteClient = {
   id: number
@@ -35,7 +37,7 @@ const ManageGroupMembers = () => {
   const { t } = useTranslation('groups')
   const { t: tc } = useTranslation('common')
 
-  const [group, setGroup] = useState<GetGroupsGroupIdResponse>()
+  const [group, setGroup] = useState<GroupData>()
   const [clientMembers, setClientMembers] = useState<LiteClient[]>([])
 
   // left card – autocomplete + selected client details
@@ -48,21 +50,13 @@ const ManageGroupMembers = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await groupsApi.retrieveOne15(
-          Number(id),
-          undefined,
-          undefined,
-          {
-            params: { associations: 'clientMembers' },
-          }
-        )
-        setGroup(res.data)
-        const dataRecord = res.data as unknown as Record<string, unknown>
-        const members = Array.from(
-          (Array.isArray(dataRecord?.clientMembers)
-            ? dataRecord.clientMembers
-            : []) as LiteClient[]
-        )
+        const { data } = await fineract.get(`/v1/groups/${id}`, {
+          params: { associations: 'groupMembers' },
+        })
+        setGroup(data as GroupData)
+        const members: LiteClient[] = Array.isArray(data?.clientMembers)
+          ? (data.clientMembers as LiteClient[])
+          : []
         setClientMembers(members)
       } catch (e) {
         console.error('Failed to load group/members', e)
@@ -102,8 +96,9 @@ const ManageGroupMembers = () => {
     if (!selectedClient || !id) return
     setBusy(true)
     try {
-      // TODO: OpenAPI call to add client to group
-      // e.g. await groupsApi.addClientToGroup(Number(id), { clientId: selectedClient.id })
+      await fineract.post(`/v1/groups/${id}?command=associateClients`, {
+        clientMembers: [selectedClient.id],
+      })
       setClientMembers(prev => {
         if (prev.find(c => c.id === selectedClient.id)) return prev // no dupes
         return [...prev, selectedClient]

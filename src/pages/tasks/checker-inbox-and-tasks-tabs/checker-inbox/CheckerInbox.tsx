@@ -24,51 +24,33 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  MakerCheckerOr4EyeFunctionalityApi,
-  type AuditData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const dummyData = [
-  {
-    id: 1,
-    madeOnDate: '2025-06-25',
-    processingResult: 'Pending',
-    maker: 'admin',
-    actionName: 'CREATE',
-    entityName: 'Client',
-  },
-  {
-    id: 2,
-    madeOnDate: '2025-06-24',
-    processingResult: 'Approved',
-    maker: 'john',
-    actionName: 'UPDATE',
-    entityName: 'Loan',
-  },
-]
-
-const makerCheckerApi = new MakerCheckerOr4EyeFunctionalityApi(
-  getConfiguration()
-)
+interface MakerCheckerTask {
+  id?: number
+  madeOnDate?: string
+  processingResult?: string
+  maker?: string
+  actionName?: string
+  entityName?: string
+}
 
 const CheckerInboxContent = () => {
-  const [_tasks, setTasks] = useState<AuditData[] | null>(null) // Reserved for future use: _tasks
+  const [tasks, setTasks] = useState<MakerCheckerTask[]>([])
   const [filter, setFilter] = useState('')
   const [selectedRows, setSelectedRows] = useState<number[]>([])
 
   useEffect(() => {
-    const fetchRescheduledLoanDetails = async () => {
+    const fetchTasks = async () => {
       try {
-        const response = await makerCheckerApi.retrieveCommands()
-        setTasks(response.data)
+        const { data } = await fineract.get('/v1/makercheckers')
+        setTasks(data ?? [])
       } catch (err) {
-        console.error("Couldn't fetch rescheduled loan details", err)
+        console.error("Couldn't fetch maker-checker tasks", err)
       }
     }
 
-    fetchRescheduledLoanDetails()
+    fetchTasks()
   }, [])
 
   const handleToggle = (id: number) => {
@@ -79,14 +61,12 @@ const CheckerInboxContent = () => {
 
   const handleSelectAll = () => {
     setSelectedRows(
-      selectedRows.length === dummyData.length
-        ? []
-        : dummyData.map(item => item.id)
+      selectedRows.length === tasks.length ? [] : tasks.map(item => item.id!)
     )
   }
 
-  const filteredData = dummyData.filter(item =>
-    item.maker.toLowerCase().includes(filter.toLowerCase())
+  const filteredData = tasks.filter(item =>
+    (item.maker ?? '').toLowerCase().includes(filter.toLowerCase())
   )
 
   return (
@@ -147,7 +127,9 @@ const CheckerInboxContent = () => {
               <TableRow>
                 <TableHead className="w-10">
                   <Checkbox
-                    checked={selectedRows.length === dummyData.length}
+                    checked={
+                      tasks.length > 0 && selectedRows.length === tasks.length
+                    }
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
@@ -164,8 +146,8 @@ const CheckerInboxContent = () => {
                 <TableRow key={row.id} className="hover:bg-muted">
                   <TableCell>
                     <Checkbox
-                      checked={selectedRows.includes(row.id)}
-                      onCheckedChange={() => handleToggle(row.id)}
+                      checked={selectedRows.includes(row.id!)}
+                      onCheckedChange={() => handleToggle(row.id!)}
                     />
                   </TableCell>
                   <TableCell>{row.id}</TableCell>

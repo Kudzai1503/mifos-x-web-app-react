@@ -10,24 +10,31 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { StaffApi, type StaffData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons'
 
-const staffApi = new StaffApi(getConfiguration())
+interface Employee {
+  id?: number
+  firstname?: string
+  lastname?: string
+  officeName?: string
+  isLoanOfficer?: boolean
+  isActive?: boolean
+  joiningDate?: string | number
+}
 
 const ViewEmployees = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [emp, setEmp] = useState<StaffData>()
+  const [emp, setEmp] = useState<Employee>()
 
   // fetch employee details
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
-        const res = await staffApi.retrieveOne8(Number(id))
-        setEmp(res.data)
+        const { data } = await fineract.get(`/v1/staff/${id}`)
+        setEmp(data)
       } catch (err) {
         console.error('Failed to fetch employee', err)
       }

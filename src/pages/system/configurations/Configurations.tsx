@@ -20,23 +20,25 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Pencil } from 'lucide-react'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  GlobalConfigurationApi,
-  type GlobalConfigurationPropertyData,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-const api = new GlobalConfigurationApi(getConfiguration())
+interface GlobalConfigProperty {
+  name?: string
+  enabled?: boolean
+  value?: number
+  stringValue?: string
+  dateValue?: string
+}
 
 const Configurations = () => {
-  const [configs, setConfigs] = useState<GlobalConfigurationPropertyData[]>([])
+  const [configs, setConfigs] = useState<GlobalConfigProperty[]>([])
   const [filter, setFilter] = useState('')
 
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await api.retrieveConfiguration()
-        setConfigs(res.data.globalConfiguration ?? [])
+        const { data } = await fineract.get('/v1/configurations')
+        setConfigs(data.globalConfiguration ?? [])
       } catch (e) {
         console.error('Failed to fetch configurations', e)
       }
@@ -50,7 +52,7 @@ const Configurations = () => {
     )
   }
 
-  const handleEdit = async (row: GlobalConfigurationPropertyData) => {
+  const handleEdit = async (row: GlobalConfigProperty) => {
     if (!row.name) return
 
     const hasString = row.stringValue !== undefined && row.stringValue !== null

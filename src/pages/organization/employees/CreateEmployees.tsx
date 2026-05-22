@@ -22,16 +22,16 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
+import fineract from '@/lib/axios'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { StaffApi, OfficesApi, type GetOfficesResponse } from '@/fineract-api'
-
-const staffApi = new StaffApi(getConfiguration())
-const officesApi = new OfficesApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+}
 
 const CreateEmployees = () => {
   const navigate = useNavigate()
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
 
   // form state
   const [formData, setFormData] = useState({
@@ -47,8 +47,8 @@ const CreateEmployees = () => {
   useEffect(() => {
     const fetchOffices = async () => {
       try {
-        const res = await officesApi.retrieveOffices()
-        setOffices(res.data || [])
+        const { data } = await fineract.get('/v1/offices')
+        setOffices(data || [])
       } catch (err) {
         console.error('Failed to fetch offices', err)
       }
@@ -61,7 +61,7 @@ const CreateEmployees = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await staffApi.create3({
+      await fineract.post('/v1/staff', {
         officeId: Number(formData.officeId),
         firstname: formData.firstname,
         lastname: formData.lastname,

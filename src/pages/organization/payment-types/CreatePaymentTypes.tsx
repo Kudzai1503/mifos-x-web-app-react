@@ -13,11 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-
-import { PaymentTypeApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const paymentTypeApi = new PaymentTypeApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 const CreatePaymentTypes = () => {
   const navigate = useNavigate()
@@ -34,7 +30,7 @@ const CreatePaymentTypes = () => {
     e.preventDefault()
 
     try {
-      await paymentTypeApi.createPaymentType({
+      await fineract.post('/v1/paymenttypes', {
         name: formData.paymentType,
         description: formData.description || undefined,
         position: Number(formData.position),

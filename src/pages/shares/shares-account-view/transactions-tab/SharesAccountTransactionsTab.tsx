@@ -8,6 +8,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import {
   Table,
   TableHeader,
@@ -62,25 +64,29 @@ const fmtDate = (d: unknown) => {
 }
 
 const SharesAccountTransactionsTab = () => {
-  const { accountId } = useParams()
+  const { sharesAccountId } = useParams()
   const [loading, setLoading] = useState(true)
   const [acct, setAcct] = useState<ShareAccount | null>(null)
   const [rows, setRows] = useState<ShareTx[]>([])
 
-  // fetch share account
+  // fetch share account transactions
   useEffect(() => {
-    if (!accountId) return
+    if (!sharesAccountId) return
     ;(async () => {
       try {
-        const res = await fetch(
-          `/api/v1/accounts/share/${accountId}?template=false`
+        const { data } = await fineract.get(
+          `/v1/accounts/share/${sharesAccountId}/transactions`
         )
-        const json = await res.json()
-        setAcct(json || null)
-        const list = Array.isArray(json?.purchasedShares)
-          ? json.purchasedShares
-          : []
-        setRows(list)
+        // API may return the account object with purchasedShares, or a list directly
+        if (Array.isArray(data)) {
+          setRows(data)
+        } else {
+          setAcct(data || null)
+          const list = Array.isArray(data?.purchasedShares)
+            ? data.purchasedShares
+            : []
+          setRows(list)
+        }
       } catch (e) {
         console.error('Failed to load shares transactions', e)
         setRows([])
@@ -88,7 +94,7 @@ const SharesAccountTransactionsTab = () => {
         setLoading(false)
       }
     })()
-  }, [accountId])
+  }, [sharesAccountId])
 
   // currency formatting
   const currencyCode = acct?.currency?.code ?? 'USD'

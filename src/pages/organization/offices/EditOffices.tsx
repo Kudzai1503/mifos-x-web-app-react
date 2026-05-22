@@ -13,17 +13,18 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
+import fineract from '@/lib/axios'
 
-import { OfficesApi, type GetOfficesResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const officesApi = new OfficesApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+}
 
 const EditOffices = () => {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
   const [formData, setFormData] = useState({
     officeName: '',
     parentOffice: '',
@@ -35,14 +36,14 @@ const EditOffices = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const allOfficesRes = await officesApi.retrieveOffices()
-        setOffices(allOfficesRes.data || [])
+        const officesRes = await fineract.get('/v1/offices')
+        setOffices(officesRes.data || [])
 
         if (id) {
-          const officeRes = await officesApi.retrieveOffice(Number(id))
+          const officeRes = await fineract.get(`/v1/offices/${id}`)
           setFormData({
             officeName: officeRes.data.name ?? '',
-            parentOffice: officeRes.data.allowedParents?.toString() ?? '',
+            parentOffice: officeRes.data.parentId?.toString() ?? '',
             openedOn: officeRes.data.openingDate ?? '',
             externalId: officeRes.data.externalId ?? '',
           })
@@ -72,7 +73,7 @@ const EditOffices = () => {
     )
 
     try {
-      await officesApi.updateOffice(Number(id), {
+      await fineract.put(`/v1/offices/${id}`, {
         name: formData.officeName,
         openingDate: formattedDate,
         externalId: formData.externalId,

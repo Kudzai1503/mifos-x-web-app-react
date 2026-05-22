@@ -8,15 +8,27 @@
 import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faCircle } from '@fortawesome/free-solid-svg-icons'
-import { ClientApi, type ClientData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useTranslation } from 'react-i18next'
 
 interface ClientNavigationProps {
   clientId: number
 }
 
-const clientApi = new ClientApi(getConfiguration())
+interface ClientData {
+  id?: number
+  displayName?: string
+  firstname?: string
+  middlename?: string
+  lastname?: string
+  accountNo?: string
+  externalId?: string | { value?: string }
+  officeName?: string
+  staffName?: string
+  mobileNo?: string
+  dateOfBirth?: string
+  activationDate?: string
+}
 
 const ClientNavigation = ({ clientId }: ClientNavigationProps) => {
   const [client, setClient] = useState<ClientData | undefined>()
@@ -25,8 +37,10 @@ const ClientNavigation = ({ clientId }: ClientNavigationProps) => {
   useEffect(() => {
     const fetchClient = async () => {
       try {
-        const res = await clientApi.retrieveAll21(clientId)
-        setClient(res.data as ClientData)
+        const { data } = await fineract.get<ClientData>(
+          `/v1/clients/${clientId}`
+        )
+        setClient(data)
       } catch (err) {
         console.error('Failed to fetch client details', err)
       }

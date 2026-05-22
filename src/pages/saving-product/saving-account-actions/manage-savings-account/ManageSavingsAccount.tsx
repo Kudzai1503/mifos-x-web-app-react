@@ -8,6 +8,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { Button } from '@/components/ui/button'
@@ -31,9 +33,21 @@ const ManageSavingsAccount = () => {
     }
   }
 
-  const onSubmit = () => {
-    // TODO: Call savings account manage API
-    backToTransactions()
+  const onSubmit = async () => {
+    try {
+      await fineract.post(
+        `/v1/savingsaccounts/${accountId}?command=holdAmount`,
+        {
+          reasonForBlock,
+          transactionDate,
+          transactionAmount: Number(transactionAmount),
+        }
+      )
+      navigate(-1)
+    } catch (e) {
+      console.error('Hold amount failed', e)
+      alert('Hold amount failed')
+    }
   }
 
   return (

@@ -7,24 +7,19 @@
  */
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import type {
-  GetLoansLoanIdResponse,
-  GetLoansLoanIdAmortizationType,
-  GetLoansLoanIdInterestRateFrequencyType,
-  GetLoansLoanIdInterestType,
-  GetLoansLoanIdInterestCalculationPeriodType,
-  GetLoansLoanIdRepaymentFrequencyType,
-} from '@/fineract-api'
-import { LoansApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const loansApi = new LoansApi(getConfiguration())
-
-/** Extension for properties not on the generated type but returned at runtime. */
-type ExtendedLoan = GetLoansLoanIdResponse & {
+type ExtendedLoan = {
   transactionProcessingStrategyName?: string
   transactionProcessingStrategyId?: { value?: string }
+  repaymentEvery?: number
+  repaymentFrequencyType?: { value?: string }
+  amortizationType?: { value?: string }
   isEqualAmortization?: boolean
+  annualInterestRate?: number
+  interestRateFrequencyType?: { value?: string }
+  interestRatePerPeriod?: number
+  interestType?: { value?: string }
   isEnableDownPayment?: boolean
   chargeOffReason?: { value?: string }
   isIncomeFromInterestAccrual?: boolean
@@ -32,29 +27,29 @@ type ExtendedLoan = GetLoansLoanIdResponse & {
   graceOnInterestPayment?: number
   graceOnInterestCharged?: number
   graceOnArrearsAgeing?: number
+  enableInstallmentLevelDelinquency?: boolean
   fundSourceName?: string
   fundSourceId?: { value?: string }
   interestFreePeriodInDays?: number
+  interestCalculationPeriodType?: { value?: string }
   allowPartialPeriodInterestCalc?: boolean
   isInterestRecognitionAtDisbursement?: boolean
   isInterestRecalculationEnabled?: boolean
   daysInYearType?: { value?: string }
   daysInMonthType?: { value?: string }
+  timeline?: {
+    submittedOnDate?: string
+    approvedOnDate?: string
+    actualDisbursementDate?: string
+    expectedDisbursementDate?: string
+    expectedMaturityDate?: string
+  }
 }
 
-/** Helper type to extract value from enum option types. */
 type EnumValue = { value?: string }
 
-const enumVal = (
-  e:
-    | EnumValue
-    | GetLoansLoanIdAmortizationType
-    | GetLoansLoanIdInterestRateFrequencyType
-    | GetLoansLoanIdInterestType
-    | GetLoansLoanIdInterestCalculationPeriodType
-    | GetLoansLoanIdRepaymentFrequencyType
-    | undefined
-): string | undefined => (e as EnumValue | undefined)?.value
+const enumVal = (e: EnumValue | undefined): string | undefined =>
+  (e as EnumValue | undefined)?.value
 
 const yesNo = (v?: boolean) => (v ? 'Yes' : 'No')
 
@@ -99,9 +94,8 @@ const LoansAccountDetails = () => {
     ;(async () => {
       try {
         if (!loanId) return
-        const loanIdNum = Number(loanId)
-        const res = await loansApi.retrieveLoan(loanIdNum)
-        setLoan(res.data as ExtendedLoan)
+        const { data } = await fineract.get(`/v1/loans/${loanId}`)
+        setLoan(data as ExtendedLoan)
       } finally {
         setLoading(false)
       }

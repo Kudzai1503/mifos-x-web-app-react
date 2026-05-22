@@ -28,19 +28,25 @@ import {
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { AccountingRulesApi, type AccountingRuleData } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
 import { Plus } from 'lucide-react'
 
-//accounting API
-const accountingRulesApi = new AccountingRulesApi(getConfiguration())
+interface AccountingRule {
+  id?: number
+  name?: string
+  officeName?: string
+  debitTags?: { tag?: string }[]
+  creditTags?: { tag?: string }[]
+  debitAccounts?: { id?: number; name?: string; glCode?: string }[]
+  creditAccounts?: { id?: number; name?: string; glCode?: string }[]
+}
 
 const AccountingRules = () => {
   const navigate = useNavigate()
 
   //state to fetch accouting data
-  const [rules, setRules] = useState<AccountingRuleData[]>([])
+  const [rules, setRules] = useState<AccountingRule[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -48,8 +54,8 @@ const AccountingRules = () => {
   useEffect(() => {
     const fetchRules = async () => {
       try {
-        const response = await accountingRulesApi.retrieveAllAccountingRules()
-        setRules(response.data || [])
+        const { data } = await fineract.get('/v1/accountingrules')
+        setRules(data || [])
       } catch (err) {
         console.error('Failed to fetch accounting rules', err)
       }

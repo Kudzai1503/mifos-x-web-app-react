@@ -29,24 +29,23 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  MappingFinancialActivitiesToAccountsApi,
-  type GetFinancialActivityAccountsResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API client
-const financialActivityApi = new MappingFinancialActivitiesToAccountsApi(
-  getConfiguration()
-)
+interface FinancialActivityMapping {
+  id?: number
+  financialActivityData?: {
+    id?: number
+    name?: string
+    mappedGLAccountType?: string
+  }
+  glAccountData?: { id?: number; name?: string; glCode?: string }
+}
 
 const FinancialActivityMappings = () => {
   const navigate = useNavigate()
 
   // Data + UI state
-  const [mappings, setMappings] = useState<
-    GetFinancialActivityAccountsResponse[]
-  >([])
+  const [mappings, setMappings] = useState<FinancialActivityMapping[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -55,8 +54,8 @@ const FinancialActivityMappings = () => {
   useEffect(() => {
     const fetchMappings = async () => {
       try {
-        const response = await financialActivityApi.retrieveAll()
-        setMappings(response.data || [])
+        const { data } = await fineract.get('/v1/financialactivityaccounts')
+        setMappings(data || [])
       } catch (err) {
         console.error('Failed to fetch financial activity mappings', err)
       }

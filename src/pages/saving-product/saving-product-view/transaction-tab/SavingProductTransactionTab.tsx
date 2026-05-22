@@ -8,8 +8,18 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { SavingsAccountApi, type CurrencyData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
+
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
 
 interface TransactionRecord {
   id?: number
@@ -23,18 +33,10 @@ interface TransactionRecord {
   note?: string
 }
 
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from '@/components/ui/table'
-
-const api = new SavingsAccountApi(getConfiguration())
+interface CurrencyInfo {
+  code?: string
+  displayLabel?: string
+}
 
 const SavingProductTransactionTab = () => {
   const { accountId, transactionId } = useParams()
@@ -42,20 +44,17 @@ const SavingProductTransactionTab = () => {
 
   const [loading, setLoading] = useState(true)
   const [transactions, setTransactions] = useState<TransactionRecord[]>([])
-  const [currency, setCurrency] = useState<CurrencyData | null>(null)
+  const [currency, setCurrency] = useState<CurrencyInfo | null>(null)
 
   useEffect(() => {
     if (!accountId) return
     ;(async () => {
       try {
-        const res = await api.retrieveOne25(
-          Number(accountId),
-          undefined,
-          undefined,
-          'transactions'
+        const { data } = await fineract.get(
+          `/v1/savingsaccounts/${accountId}/transactions`
         )
-        setTransactions(res.data?.transactions || [])
-        setCurrency(res.data?.currency || null)
+        setTransactions(data?.pageItems || data?.transactions || [])
+        setCurrency(data?.currency || null)
       } catch (e) {
         console.error('Failed to load transactions', e)
       } finally {

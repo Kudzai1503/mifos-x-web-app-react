@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Search, Info } from 'lucide-react'
+import fineract from '@/lib/axios'
 
 type InvestorRow = Record<string, unknown>
 
@@ -32,7 +33,14 @@ const Investors = () => {
     e.preventDefault()
     setLoading(true)
     try {
-      setRows([]) // placeholder to show "No data found"
+      const params: Record<string, string> = {}
+      if (filters.q) params.searchConditions = filters.q
+      if (filters.effectiveFrom) params.effectiveFrom = filters.effectiveFrom
+      if (filters.effectiveTo) params.effectiveTo = filters.effectiveTo
+      if (filters.settlementFrom) params.settlementFrom = filters.settlementFrom
+      if (filters.settlementTo) params.settlementTo = filters.settlementTo
+      const { data } = await fineract.get('/v1/externalassetowners', { params })
+      setRows(data?.content ?? data ?? [])
     } catch (err) {
       console.error('Search failed', err)
       setRows([])

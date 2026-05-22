@@ -22,24 +22,30 @@ import {
 } from '@/components/ui/alert-dialog'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { AdhocQueryApiApi, type AdHocData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons'
 
-const adhocApi = new AdhocQueryApiApi(getConfiguration())
+interface AdhocQueryData {
+  id?: number
+  name?: string
+  query?: string
+  tableName?: string
+  isActive?: boolean
+  createdBy?: string
+}
 
 const ViewAdhocQuery = () => {
   const navigate = useNavigate()
   const { id } = useParams() // route id
-  const [query, setQuery] = useState<AdHocData>() // current record
+  const [query, setQuery] = useState<AdhocQueryData>() // current record
 
   useEffect(() => {
     // load record by id
     const fetchQuery = async () => {
       try {
-        const res = await adhocApi.retrieveAdHocQuery(Number(id))
-        setQuery(res.data)
+        const { data } = await fineract.get(`/v1/adhocquery/${id}`)
+        setQuery(data)
       } catch (err) {
         console.error('Failed to fetch adhoc query', err)
       }
@@ -50,7 +56,7 @@ const ViewAdhocQuery = () => {
   // delete record then return to list
   const handleDelete = async () => {
     try {
-      await adhocApi.deleteAdHocQuery(Number(id))
+      await fineract.delete(`/v1/adhocquery/${id}`)
       navigate('/organization/adhoc-query')
     } catch (err) {
       console.error('Failed to delete adhoc query', err)

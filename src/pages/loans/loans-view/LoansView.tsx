@@ -12,25 +12,31 @@ import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import Dropdown from '@/components/custom/navbar/Dropdown'
 import AppTabs from '@/components/custom/tabs/AppTabs'
 
-import type {
-  GetLoansLoanIdResponse,
-  GetLoansLoanIdStatus,
-} from '@/fineract-api'
-import { LoansApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { faCircle, faMoneyBill } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from 'lucide-react'
 
-const loansApi = new LoansApi(getConfiguration())
+interface LoanStatus {
+  pendingApproval?: boolean
+  waitingForDisbursal?: boolean
+  active?: boolean
+  description?: string
+}
 
 /** Extension for properties the API may return but are not on the generated type. */
-type ExtendedLoan = GetLoansLoanIdResponse & {
+interface ExtendedLoan {
+  id?: number
+  accountNo?: string
+  clientName?: string
+  loanProductName?: string
   group?: { name?: string }
   inArrears?: boolean
-  loanStatus?: GetLoansLoanIdStatus
+  status?: LoanStatus
+  loanStatus?: LoanStatus
   loanStatusType?: { value?: string }
+  summary?: { inArrears?: boolean }
 }
 
 /* permissions */
@@ -64,7 +70,7 @@ const hasPerm = (p: string) => granted.has(p)
 /* loan stages helper */
 type LoanStage = 'CREATED' | 'APPROVED' | 'ACTIVE' | 'CLOSED'
 const getLoanStage = (ln: ExtendedLoan): LoanStage => {
-  const s = ln.status ?? ({} as GetLoansLoanIdStatus)
+  const s = ln.status ?? ({} as LoanStatus)
   if (s.pendingApproval) return 'CREATED'
   if (
     (!s.active && s.waitingForDisbursal) ||
@@ -365,9 +371,8 @@ const LoansView = () => {
     if (!loanId) return
     ;(async () => {
       try {
-        const loanIdNum = Number(loanId)
-        const res = await loansApi.retrieveLoan(loanIdNum)
-        setLoan(res.data as ExtendedLoan)
+        const { data } = await fineract.get<ExtendedLoan>(`/v1/loans/${loanId}`)
+        setLoan(data)
       } catch (err) {
         console.error('Failed to fetch loan', err)
       }
@@ -375,7 +380,7 @@ const LoansView = () => {
   }, [loanId])
 
   // status handling
-  const s = loan?.status ?? loan?.loanStatus ?? ({} as GetLoansLoanIdStatus)
+  const s = loan?.status ?? loan?.loanStatus ?? ({} as LoanStatus)
   const statusDesc = (
     s.description ??
     loan?.loanStatusType?.value ??

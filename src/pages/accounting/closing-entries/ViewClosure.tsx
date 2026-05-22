@@ -12,18 +12,25 @@ import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { AccountingClosureApi, type GetGlClosureResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API client
-const closureApi = new AccountingClosureApi(getConfiguration())
+interface GlClosure {
+  id?: number
+  officeName?: string
+  closingDate?: string | number
+  createdByUsername?: string
+  lastUpdatedByUsername?: string
+  lastUpdatedDate?: string | number
+  createdDate?: string | number
+  comments?: string
+}
 
 const ViewClosure = () => {
   const navigate = useNavigate()
   const { id } = useParams()
 
   // Loaded closure record
-  const [closure, setClosure] = useState<GetGlClosureResponse>()
+  const [closure, setClosure] = useState<GlClosure>()
 
   // Fetch closure
   useEffect(() => {
@@ -32,8 +39,8 @@ const ViewClosure = () => {
 
     const fetchClosure = async () => {
       try {
-        const response = await closureApi.retreiveClosure(closureId)
-        setClosure(response.data)
+        const { data } = await fineract.get(`/v1/glclosures/${id}`)
+        setClosure(data)
       } catch (err) {
         console.error('Failed to fetch GL Closure', err)
       }
@@ -45,7 +52,7 @@ const ViewClosure = () => {
   // Delete handler
   const handleDelete = async () => {
     try {
-      await closureApi.deleteGLClosure(Number(id))
+      await fineract.delete(`/v1/glclosures/${id}`)
       navigate('/accounting/closing-entries')
     } catch (err) {
       console.error('Failed to delete closure', err)

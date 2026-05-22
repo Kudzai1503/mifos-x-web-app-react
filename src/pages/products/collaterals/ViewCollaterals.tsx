@@ -22,30 +22,24 @@ import {
 } from '@/components/ui/alert-dialog'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import {
-  CollateralManagementApi,
-  type CollateralManagementData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons'
-
-// API instance for Collateral Management
-const collateralApi = new CollateralManagementApi(getConfiguration())
 
 const ViewCollaterals = () => {
   const navigate = useNavigate()
   // Get :id from route
   const { id } = useParams()
   // Holds the fetched collateral details
-  const [collateral, setCollateral] = useState<CollateralManagementData>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [collateral, setCollateral] = useState<any>()
 
   useEffect(() => {
     // Fetch a single collateral by id on mount / id change
     const fetchCollateral = async () => {
       try {
-        const res = await collateralApi.getCollateral(Number(id))
-        setCollateral(res.data)
+        const { data } = await fineract.get(`/v1/collateral-management/${id}`)
+        setCollateral(data)
       } catch (err) {
         console.error('Failed to fetch collateral', err)
       }
@@ -56,7 +50,7 @@ const ViewCollaterals = () => {
   // Delete handler confirms in dialog, then calls API and navigates back to list
   const handleDelete = async () => {
     try {
-      await collateralApi.deleteCollateral2(Number(id))
+      await fineract.delete(`/v1/collateral-management/${id}`)
       navigate('/products/collaterals')
     } catch (err) {
       console.error('Failed to delete collateral', err)

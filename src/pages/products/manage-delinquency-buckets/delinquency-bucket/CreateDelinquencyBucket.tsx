@@ -33,14 +33,14 @@ import {
 } from '@/components/ui/table'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import {
-  DelinquencyRangeAndBucketsManagementApi,
-  type DelinquencyRangeData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-// API instance
-const api = new DelinquencyRangeAndBucketsManagementApi(getConfiguration())
+interface DelinquencyRangeItem {
+  id?: number
+  classification?: string
+  minimumAgeDays?: number
+  maximumAgeDays?: number
+}
 
 const CreateDelinquencyBucket = () => {
   const navigate = useNavigate()
@@ -52,14 +52,16 @@ const CreateDelinquencyBucket = () => {
   const [selectedRange, setSelectedRange] = useState('')
 
   // Ranges added into this bucket
-  const [addedRanges, setAddedRanges] = useState<DelinquencyRangeData[]>([])
+  const [addedRanges, setAddedRanges] = useState<DelinquencyRangeItem[]>([])
 
   // All ranges fetched from API
-  const [ranges, setRanges] = useState<DelinquencyRangeData[]>([])
+  const [ranges, setRanges] = useState<DelinquencyRangeItem[]>([])
 
   // Fetch delinquency ranges on mount
   useEffect(() => {
-    api.getDelinquencyRanges().then(res => setRanges(res.data || []))
+    fineract
+      .get('/v1/delinquency/ranges')
+      .then(({ data }) => setRanges(data || []))
   }, [])
 
   // Add selected range into addedRanges list
@@ -85,7 +87,7 @@ const CreateDelinquencyBucket = () => {
     }
 
     try {
-      await api.createDelinquencyBucket({
+      await fineract.post('/v1/delinquency/buckets', {
         name: formData.name,
         ranges: addedRanges
           .map(r => r.id!)

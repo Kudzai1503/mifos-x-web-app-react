@@ -11,12 +11,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { useTranslation } from 'react-i18next'
-import { CentersApi, type GetCentersCenterIdResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 
-const centersApi = new CentersApi(getConfiguration())
+interface CenterData {
+  id?: number
+  name?: string
+}
 
 const CloseCenters = () => {
   const navigate = useNavigate()
@@ -24,19 +26,34 @@ const CloseCenters = () => {
   const { t } = useTranslation('centers')
   const { t: tc } = useTranslation('common')
 
-  const [center, setCenter] = useState<GetCentersCenterIdResponse>()
-  const [_staffId, _setStaffId] = useState<string>('') // Reserved for future use
+  const [center, setCenter] = useState<CenterData>()
+  const [closedOnDate, setClosedOnDate] = useState('')
 
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await centersApi.retrieveOne14(Number(id))
-        setCenter(res.data)
+        const { data } = await fineract.get(`/v1/centers/${id}`)
+        setCenter(data as CenterData)
       } catch (err) {
         console.error("Can't fetch center", err)
       }
     })()
   }, [id])
+
+  const handleClose = async () => {
+    if (!closedOnDate) return
+    try {
+      await fineract.post(`/v1/centers/${id}?command=close`, {
+        closureDate: closedOnDate,
+        dateFormat: 'yyyy-MM-dd',
+        locale: 'en',
+        closureReasonId: 1,
+      })
+      navigate(`/centers`)
+    } catch (err) {
+      console.error('Failed to close center', err)
+    }
+  }
 
   return (
     <div className="min-h-screen px-6 py-10 bg-gray-50 dark:bg-zinc-900">
@@ -55,12 +72,14 @@ const CloseCenters = () => {
         <div className="space-y-6">
           <div className="flex flex-col gap-6">
             <div className="w-full space-y-2">
-              <Label htmlFor="center-name">{t('close.labelClosedOn')}</Label>
+              <Label htmlFor="center-close-date">
+                {t('close.labelClosedOn')}
+              </Label>
               <Input
                 type="date"
-                id="center-name"
-                defaultValue={center?.name ?? ''}
-                placeholder=""
+                id="center-close-date"
+                value={closedOnDate}
+                onChange={e => setClosedOnDate(e.target.value)}
                 className="w-full"
               />
             </div>
@@ -92,10 +111,8 @@ const CloseCenters = () => {
 
             <Button
               className="bg-[#1074b9] hover:bg-[#1074c9] text-white cursor-pointer"
-              // no submit logic per your request
-              onClick={() => {
-                /* TODO: handle staff selection */
-              }}
+              onClick={handleClose}
+              disabled={!closedOnDate}
             >
               {tc('actions.submit')}
             </Button>

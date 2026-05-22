@@ -12,11 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-
-import { FundsApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const fundsApi = new FundsApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 const CreateFunds = () => {
   const navigate = useNavigate()
@@ -31,7 +27,7 @@ const CreateFunds = () => {
     e.preventDefault()
 
     try {
-      await fundsApi.createFund({
+      await fineract.post('/v1/funds', {
         name: formData.name,
         externalId: formData.externalId || undefined,
       })

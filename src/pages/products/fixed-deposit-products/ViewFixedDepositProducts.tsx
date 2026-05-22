@@ -8,29 +8,22 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-import {
-  FixedDepositProductApi,
-  type GetFixedDepositProductsProductIdResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Separator } from '@radix-ui/react-separator'
-
-// API instance for FD products
-const fdApi = new FixedDepositProductApi(getConfiguration())
 
 const ViewFixedDepositProducts = () => {
   const { id } = useParams() // product ID from route params
 
-  const [fdProducts, setFdProducts] =
-    useState<GetFixedDepositProductsProductIdResponse>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [fdProducts, setFdProducts] = useState<any>()
 
   // Fetch FD product details on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fdApi.retrieveOne20(Number(id)) // API call to get FD product by ID
-        setFdProducts(res.data)
+        const { data } = await fineract.get(`/v1/fixeddepositproducts/${id}`)
+        setFdProducts(data)
       } catch (err) {
         console.error('Failed to fetch FD products', err)
       }

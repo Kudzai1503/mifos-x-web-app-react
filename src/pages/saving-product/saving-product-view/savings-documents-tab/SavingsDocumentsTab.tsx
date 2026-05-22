@@ -8,8 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-import { DocumentsApi, SavingsAccountApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -22,9 +21,6 @@ import {
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-
-const api = new SavingsAccountApi(getConfiguration())
-const docsApi = new DocumentsApi(getConfiguration())
 
 type Doc = Record<string, unknown>
 
@@ -44,14 +40,10 @@ const SavingsDocumentsTab = () => {
     if (!accountId) return
     setLoading(true)
     try {
-      const res = await api.retrieveOne25(
-        Number(accountId),
-        undefined,
-        undefined,
-        'documents'
+      const { data } = await fineract.get(
+        `/v1/documents?entityType=savings&entityId=${accountId}`
       )
-      const data = res?.data as Record<string, unknown> | undefined
-      setDocs((data?.documents as Doc[]) || [])
+      setDocs(Array.isArray(data) ? data : [])
     } catch (e) {
       console.error('Failed to load documents', e)
     } finally {
@@ -67,15 +59,16 @@ const SavingsDocumentsTab = () => {
   const uploadDocument = async () => {
     if (!accountId || !file || !name.trim()) return
     try {
-      await docsApi.createDocument(
-        'savings',
-        Number(accountId),
-        undefined,
-        undefined,
-        description || undefined,
-        undefined,
-        name.trim(),
-        file
+      const form = new FormData()
+      form.append('file', file)
+      form.append('name', name.trim())
+      if (description) form.append('description', description)
+      await fineract.post(
+        `/v1/documents?entityType=savings&entityId=${accountId}`,
+        form,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
       )
       setAdding(false)
       setName('')
@@ -94,15 +87,11 @@ const SavingsDocumentsTab = () => {
   const downloadDocument = async (doc: Doc) => {
     if (!accountId || !doc?.id) return
     try {
-      const res = await docsApi.downloadFile(
-        'savings',
-        Number(accountId),
-        Number(doc.id),
+      const res = await fineract.get(
+        `/v1/documents/savings/${accountId}/${doc.id}/attachment`,
         { responseType: 'blob' }
       )
-      const url = window.URL.createObjectURL(
-        new Blob([res.data as unknown as BlobPart])
-      )
+      const url = window.URL.createObjectURL(new Blob([res.data as BlobPart]))
       const a = document.createElement('a')
       a.href = url
       a.download = (doc.fileName as string) || 'document'
@@ -117,7 +106,7 @@ const SavingsDocumentsTab = () => {
     if (!accountId || !doc?.id) return
     if (!confirm('Delete this document?')) return
     try {
-      await docsApi.deleteDocument('savings', Number(accountId), Number(doc.id))
+      await fineract.delete(`/v1/documents/savings/${accountId}/${doc.id}`)
       await load()
     } catch (e) {
       console.error(e)

@@ -17,50 +17,44 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  BatchAPIApi,
-  LoansApi,
-  OfficesApi,
-  type GetLoansLoanIdResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const loanApi = new LoansApi(getConfiguration())
-const officeApi = new OfficesApi(getConfiguration())
+interface LoanData {
+  id?: number
+  accountNo?: string
+  clientName?: string
+  clientOfficeId?: number
+  loanProductName?: string
+  principal?: number
+  loanPurposeName?: string
+}
+
+interface Office {
+  id?: number
+  name?: string
+}
 
 const LoanApproval = () => {
-  const batchApi = new BatchAPIApi(getConfiguration())
   const [filter, setFilter] = useState('')
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [groupedLoans, setGroupedLoans] = useState<
-    { officeName: string; loans: GetLoansLoanIdResponse[] }[]
+    { officeName: string; loans: LoanData[] }[]
   >([])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [loanRes, officeRes] = await Promise.all([
-          loanApi.retrieveAll27(
-            undefined,
-            undefined,
-            1000,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            '100'
-          ),
-          officeApi.retrieveOffices(),
+          fineract.get('/v1/loans', {
+            params: { limit: 1000, loanStatus: '100' },
+          }),
+          fineract.get('/v1/offices'),
         ])
 
-        const loans = (loanRes.data.pageItems ?? []) as GetLoansLoanIdResponse[]
-        const offices = officeRes.data ?? []
+        const loans: LoanData[] = loanRes.data?.pageItems ?? []
+        const offices: Office[] = officeRes.data ?? []
 
-        const groups: {
-          officeName: string
-          loans: GetLoansLoanIdResponse[]
-        }[] = []
+        const groups: { officeName: string; loans: LoanData[] }[] = []
 
         offices
           .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
@@ -91,7 +85,7 @@ const LoanApproval = () => {
     )
   }
 
-  const masterToggle = (loans: GetLoansLoanIdResponse[]) => {
+  const masterToggle = (loans: LoanData[]) => {
     const loanIds = loans.map(loan => loan.id!)
     const allSelected = loanIds.every(id => selectedIds.includes(id))
     setSelectedIds(
@@ -126,7 +120,9 @@ const LoanApproval = () => {
     }))
 
     try {
-      await batchApi.handleBatchRequests(batchPayload, true)
+      await fineract.post('/v1/batches', batchPayload, {
+        params: { enclosingTransaction: true },
+      })
       alert('Loans approved successfully.')
       setSelectedIds([]) // Clear selection
     } catch (err) {

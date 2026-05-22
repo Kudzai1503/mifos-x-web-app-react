@@ -13,18 +13,18 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
+import fineract from '@/lib/axios'
 
-import { OfficesApi, StaffApi, type GetOfficesResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const officesApi = new OfficesApi(getConfiguration())
-const staffApi = new StaffApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+}
 
 const EditEmployees = () => {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
   const [formData, setFormData] = useState({
     officeId: '',
     firstName: '',
@@ -39,13 +39,12 @@ const EditEmployees = () => {
     const fetchData = async () => {
       try {
         // offices for dropdown
-        const allOfficesRes = await officesApi.retrieveOffices()
-        setOffices(allOfficesRes.data || [])
+        const officesRes = await fineract.get('/v1/offices')
+        setOffices(officesRes.data || [])
 
         // prefill employee
         if (id) {
-          // NOTE: if your generated client names differ, swap retrieveOne16 -> your getter
-          const empRes = await staffApi.retrieveOne8(Number(id))
+          const empRes = await fineract.get(`/v1/staff/${id}`)
           const emp = empRes.data ?? {}
 
           // Fineract often sends dates as [yyyy, mm, dd]
@@ -81,7 +80,7 @@ const EditEmployees = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const _formattedDate = formData.joiningDate // Reserved for future use
+    const joiningDate = formData.joiningDate
       ? new Date(formData.joiningDate).toLocaleDateString('en-GB', {
           day: '2-digit',
           month: 'long',
@@ -90,6 +89,17 @@ const EditEmployees = () => {
       : undefined
 
     try {
+      await fineract.put(`/v1/staff/${id}`, {
+        officeId: Number(formData.officeId),
+        firstname: formData.firstName,
+        lastname: formData.lastName,
+        isLoanOfficer: formData.isLoanOfficer,
+        isActive: formData.isActive,
+        mobileNo: formData.mobileNo || undefined,
+        joiningDate,
+        locale: 'en',
+        dateFormat: 'dd MMMM yyyy',
+      })
       alert('Employee updated successfully!')
       navigate('/organization/employees')
     } catch (err) {

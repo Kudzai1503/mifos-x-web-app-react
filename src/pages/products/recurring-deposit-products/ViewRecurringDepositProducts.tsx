@@ -6,31 +6,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  RecurringDepositProductApi,
-  type GetRecurringDepositProductsProductIdResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 import { Separator } from '@radix-ui/react-separator'
 
-// Initialize API client
-const rdApi = new RecurringDepositProductApi(getConfiguration())
-
 const ViewRecurringDepositProducts = () => {
-  const _navigate = useNavigate() // Reserved for future use
   const { id } = useParams() // get product id from URL
-  const [recurrProduct, setRecurrProduct] =
-    useState<GetRecurringDepositProductsProductIdResponse>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [recurrProduct, setRecurrProduct] = useState<any>()
 
   useEffect(() => {
     // Fetch Recurring Deposit Product details on mount
     const fetch = async () => {
       try {
-        const res = await rdApi.retrieveOne23(Number(id))
-        setRecurrProduct(res.data)
+        const { data } = await fineract.get(
+          `/v1/recurringdepositproducts/${id}`
+        )
+        setRecurrProduct(data)
       } catch (err) {
         console.error('Failed to fetch recurring deposit product', err)
       }

@@ -24,23 +24,17 @@ import SavingsProductTermsStep from './create-saving-products-stepper/SavingsPro
 import SavingsProductSettingsStep from './create-saving-products-stepper/SavingsProductSettingsStep'
 import SavingsProductChargesStep from './create-saving-products-stepper/SavingsProductChargesStep'
 import SavingsProductAccountingStep from './create-saving-products-stepper/SavingsProductAccountingStep'
-import {
-  SavingsProductApi,
-  type GetSavingsProductsTemplateResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const savingProductApi = new SavingsProductApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 const CreateSavingsProducts = () => {
-  const [savingProductTemplate, setSavingProductTemplate] =
-    useState<GetSavingsProductsTemplateResponse>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [savingProductTemplate, setSavingProductTemplate] = useState<any>()
 
   useEffect(() => {
     const fetchSavingProductTemplateDetails = async () => {
       try {
-        const response = await savingProductApi.retrieveTemplate20()
-        setSavingProductTemplate(response.data)
+        const { data } = await fineract.get('/v1/savingsproducts/template')
+        setSavingProductTemplate(data)
       } catch (err) {
         console.error('Failed to fetch Saving Product Response', err)
       }
@@ -57,7 +51,7 @@ const CreateSavingsProducts = () => {
 
   const currencyOptions = Array.from(
     savingProductTemplate?.currencyOptions ?? []
-  ).map(c => ({
+  ).map((c: { code?: string; name?: string; decimalPlaces?: number }) => ({
     id: c.code!,
     name: c.name!,
     decimalPlaces: c.decimalPlaces!,
@@ -65,33 +59,53 @@ const CreateSavingsProducts = () => {
 
   const compoundingPeriodOptions = mapDropdownOptions(
     savingProductTemplate?.interestCompoundingPeriodTypeOptions,
-    o => ({ id: o.id!.toString(), name: o.value! })
+    (o: { id?: number; value?: string }) => ({
+      id: o.id!.toString(),
+      name: o.value!,
+    })
   )
 
   const postingPeriodOptions = mapDropdownOptions(
     savingProductTemplate?.interestPostingPeriodTypeOptions,
-    o => ({ id: o.id!.toString(), name: o.value! })
+    (o: { id?: number; value?: string }) => ({
+      id: o.id!.toString(),
+      name: o.value!,
+    })
   )
 
   const interestCalculationOptions = mapDropdownOptions(
     savingProductTemplate?.interestCalculationTypeOptions,
-    o => ({ id: o.id!.toString(), name: o.value! })
+    (o: { id?: number; value?: string }) => ({
+      id: o.id!.toString(),
+      name: o.value!,
+    })
   )
 
   const daysInYearOptions = mapDropdownOptions(
     savingProductTemplate?.interestCalculationDaysInYearTypeOptions,
-    o => ({ id: o.id!.toString(), name: o.value! })
+    (o: { id?: number; value?: string }) => ({
+      id: o.id!.toString(),
+      name: o.value!,
+    })
   )
 
   const chargeOptions = Array.from(
     savingProductTemplate?.chargeOptions ?? []
-  ).map(o => ({
-    id: o.id!.toString(),
-    name: o.name!,
-    chargeTimeType: o.chargeTimeType?.description ?? '',
-    amount: o.amount!,
-    chargeCalculationType: o.chargeCalculationType?.description ?? '',
-  }))
+  ).map(
+    (o: {
+      id?: number
+      name?: string
+      chargeTimeType?: { description?: string }
+      amount?: number
+      chargeCalculationType?: { description?: string }
+    }) => ({
+      id: o.id!.toString(),
+      name: o.name!,
+      chargeTimeType: o.chargeTimeType?.description ?? '',
+      amount: o.amount!,
+      chargeCalculationType: o.chargeCalculationType?.description ?? '',
+    })
+  )
 
   const [formData, setFormData] = useState<Record<string, unknown>>({
     name: '',

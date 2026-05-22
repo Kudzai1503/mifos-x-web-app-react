@@ -7,12 +7,7 @@
  */
 import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import {
-  ReportsApi,
-  OfficesApi,
-  RunReportsApi,
-  Configuration,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
@@ -59,20 +54,14 @@ const RunReports: React.FC = () => {
       try {
         setLoading(true)
 
-        const config = new Configuration({
-          accessToken: sessionStorage.getItem('mifosToken') || undefined,
-          basePath:
-            import.meta.env.VITE_FINERACT_API_URL || '/fineract-provider/api',
-          apiKey: 'default', // Required Fineract-Platform-TenantId header
-        })
-
-        const reportsApi = new ReportsApi(config)
-        const officesApi = new OfficesApi(config)
-
         // Fetch the list of all reports to find the ID of the current report
         const formattedSearchName = reportName.replace(/-/g, ' ').toLowerCase()
-        const reportsListRes = await reportsApi.retrieveReportList({})
-        const allReports = reportsListRes.data as BasicReport[]
+        const [reportsListRes, officeRes] = await Promise.all([
+          fineract.get('/v1/reports'),
+          fineract.get('/v1/offices'),
+        ])
+
+        const allReports: BasicReport[] = reportsListRes.data ?? []
 
         const matchedReport = allReports.find(
           r =>
@@ -89,16 +78,13 @@ const RunReports: React.FC = () => {
           return
         }
 
-        //  Fetch the metadata using the matched ID instead of NaN
-        const [reportRes, officeRes] = await Promise.all([
-          reportsApi.retrieveReport(matchedReport.id, {}),
-          officesApi.retrieveOffices(undefined, undefined, undefined, {}),
-        ])
+        // Fetch the metadata using the matched ID
+        const reportRes = await fineract.get(`/v1/reports/${matchedReport.id}`)
 
         setReportData(reportRes.data as ReportMetadata)
         setOffices(officeRes.data as Office[])
       } catch (_err) {
-        setError('Failed to load report metadata via official SDK.')
+        setError('Failed to load report metadata.')
       } finally {
         setLoading(false)
       }
@@ -113,31 +99,19 @@ const RunReports: React.FC = () => {
   const handleRunReport = async () => {
     try {
       setError(null)
-      const token = sessionStorage.getItem('mifosToken')
-
-      // Configuration must include explicit headers to satisfy Fineract security
-      const config = new Configuration({
-        basePath:
-          import.meta.env.VITE_FINERACT_API_URL || '/fineract-provider/api',
-        baseOptions: {
-          headers: {
-            'Fineract-Platform-TenantId': 'default', // Mandatory Header
-            Authorization: token ? `Basic ${token}` : undefined,
-          },
-        },
-      })
-
-      const runReportsApi = new RunReportsApi(config)
       const exactReportName = reportName!.replace(/-/g, ' ')
 
-      await runReportsApi.runReport(exactReportName, false, {
-        params: formValues,
-      })
+      await fineract.get(
+        `/v1/runreports/${encodeURIComponent(exactReportName)}`,
+        {
+          params: { ...formValues, genericResultSet: false },
+        }
+      )
 
       alert('Report request successful! Check the Network tab for the data.')
     } catch (_err) {
       setError(
-        'Access Denied (403). This endpoint may be restricted on the demo server, but the SDK integration is now correct.'
+        'Access Denied (403). This endpoint may be restricted on the demo server.'
       )
     }
   }

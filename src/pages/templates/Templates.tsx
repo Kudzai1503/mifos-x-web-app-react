@@ -32,7 +32,7 @@ const Templates = () => {
       />
 
       <div className="mb-6">
-        <Button className="bg-[#1074b9] hover:bg-[#1074c9] cursor-pointer px-6 py-3 text-base text-white">
+        <Button className="bg-primary hover:bg-primary/90 cursor-pointer px-6 py-3 text-base text-white">
           <Plus className="mr-2" /> Create Template
         </Button>
       </div>

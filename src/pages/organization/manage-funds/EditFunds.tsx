@@ -12,11 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-
-import { FundsApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const fundsApi = new FundsApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 const EditFunds = () => {
   const { id } = useParams()
@@ -31,10 +27,10 @@ const EditFunds = () => {
   useEffect(() => {
     const fetchFund = async () => {
       try {
-        const res = await fundsApi.retrieveFund(Number(id))
+        const { data } = await fineract.get(`/v1/funds/${id}`)
         setFormData({
-          name: res.data.name ?? '',
-          externalId: res.data.externalId ?? '',
+          name: data.name ?? '',
+          externalId: data.externalId ?? '',
         })
       } catch (err) {
         console.error('Failed to fetch fund', err)
@@ -49,7 +45,7 @@ const EditFunds = () => {
     e.preventDefault()
 
     try {
-      await fundsApi.updateFund(Number(id), {
+      await fineract.put(`/v1/funds/${id}`, {
         name: formData.name,
         externalId: formData.externalId || undefined,
       })

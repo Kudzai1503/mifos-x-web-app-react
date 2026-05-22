@@ -28,6 +28,7 @@ import { useAppDispatch } from '@/app/hook'
 import { logout } from '@/pages/login/loginSlice'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '@/components/custom/language-switcher/LanguageSwitcher'
+import { cn } from '@/lib/utils'
 
 const MfNavbar = () => {
   const navigate = useNavigate()
@@ -53,25 +54,34 @@ const MfNavbar = () => {
     }
   }
 
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem('theme')
+    return savedTheme === 'dark' ? 'dark' : 'light'
+  })
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
+    localStorage.setItem('theme', theme)
   }, [theme])
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light')
   }
 
-  return (
-    <div className="flex justify-between items-center h-auto bg-[#1074b9] px-4 py-2 shadow-3xl text-base text-white">
-      {/* Left Menu & Sections */}
-      <div className="flex items-center gap-2 lg:gap-3 min-w-0">
-        <SidebarTrigger />
+  const navButtonClass =
+    'h-9 rounded-md bg-transparent px-3 text-sm font-medium text-white shadow-none hover:bg-white/10 hover:text-white dark:text-white'
 
-        {/* Compact Menu for small screens */}
+  const iconButtonClass =
+    'size-9 text-white hover:bg-white/10 hover:text-white dark:hover:bg-white/10'
+
+  return (
+    <header className="sticky top-0 z-30 flex min-h-14 items-center justify-between border-b border-primary/30 bg-primary px-3 text-primary-foreground shadow-sm dark:border-primary/30 sm:px-4">
+      <div className="flex min-w-0 items-center gap-2 lg:gap-3">
+        <SidebarTrigger className="text-white hover:bg-white/10 hover:text-white" />
+
         <div className="lg:hidden">
           <DropDown
+            triggerClassName="px-2"
             name={
               <span className="flex items-center gap-2">
                 <Menu className="w-5 h-5" aria-hidden="true" />
@@ -117,12 +127,12 @@ const MfNavbar = () => {
           />
         </div>
 
-        {/* Full Menu for larger screens */}
-        <div className="hidden lg:flex lg:items-center lg:gap-3">
+        <div className="hidden lg:flex lg:items-center lg:gap-1">
           <DropDown
+            triggerClassName={navButtonClass}
             name={
               <span className="flex items-center gap-2">
-                <Landmark /> {t('common:nav.institution')}
+                <Landmark className="h-4 w-4" /> {t('common:nav.institution')}
               </span>
             }
             options={[
@@ -134,15 +144,16 @@ const MfNavbar = () => {
             onSelect={handleNavigate}
           />
           <Button
-            className="flex items-center gap-2 shadow-none bg-transparent hover:bg-[#0e6aa5] hover:text-white dark:text-white"
+            className={cn(navButtonClass, 'gap-2')}
             onClick={() => navigate('/accounting')}
           >
-            <Banknote /> {t('accounting:title')}
+            <Banknote className="h-4 w-4" /> {t('accounting:title')}
           </Button>
           <DropDown
+            triggerClassName={navButtonClass}
             name={
               <span className="flex items-center gap-2">
-                <ChartBar /> {t('common:nav.reports')}
+                <ChartBar className="h-4 w-4" /> {t('common:nav.reports')}
               </span>
             }
             options={[
@@ -156,9 +167,10 @@ const MfNavbar = () => {
             onSelect={handleNavigate}
           />
           <DropDown
+            triggerClassName={navButtonClass}
             name={
               <span className="flex items-center gap-2">
-                <Shield /> {t('common:nav.admin')}
+                <Shield className="h-4 w-4" /> {t('common:nav.admin')}
               </span>
             }
             options={[
@@ -173,22 +185,27 @@ const MfNavbar = () => {
         </div>
       </div>
 
-      {/* Right Icons */}
-      <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
-        <span className="hover:text-gray-200 transition-colors hidden md:block">
-          <Search className="w-5 h-5" aria-hidden="true" />
-        </span>
-        <LanguageSwitcher className="w-[130px] bg-[#1074b9] border-white text-white hover:bg-[#0e6aa5]" />
+      <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
         <Button
           variant="ghost"
-          className="hover:text-gray-200 transition-colors hover:bg-transparent dark:hover:bg-transparent cursor-pointer p-2"
-          aria-label={t('common:accessibility.notifications')}
+          className={cn(iconButtonClass, 'hidden md:inline-flex')}
+          onClick={() => navigate('/navigation')}
+          aria-label={t('common:actions.search')}
         >
-          <Bell className="w-5 h-5" />
+          <Search className="h-4 w-4" />
+        </Button>
+        <LanguageSwitcher className="w-[132px] border-white/30 bg-white/10 text-white hover:bg-white/15" />
+        <Button
+          variant="ghost"
+          className={iconButtonClass}
+          aria-label={t('common:accessibility.notifications')}
+          onClick={() => navigate('/notifications')}
+        >
+          <Bell className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"
-          className="hover:text-gray-200 transition-colors hover:bg-transparent dark:hover:bg-transparent cursor-pointer p-2"
+          className={iconButtonClass}
           onClick={toggleTheme}
           aria-label={
             theme === 'light'
@@ -198,15 +215,16 @@ const MfNavbar = () => {
           aria-pressed={theme !== 'light'}
         >
           {theme === 'light' ? (
-            <Moon className="w-5 h-5" />
+            <Moon className="h-4 w-4" />
           ) : (
-            <Sun className="w-5 h-5" />
+            <Sun className="h-4 w-4" />
           )}
         </Button>
         <DropDown
+          triggerClassName="size-9 px-0"
           name={
             <span className="flex items-center gap-2">
-              <User aria-hidden="true" />
+              <User className="h-4 w-4" aria-hidden="true" />
               <span className="sr-only">
                 {t('common:accessibility.userMenu')}
               </span>
@@ -215,7 +233,7 @@ const MfNavbar = () => {
           options={[
             {
               label: t('common:nav.help'),
-              path: 'https://mifosforge.jira.com/wiki/spaces/docs/pages/52035622/User+Manualsers',
+              path: 'https://mifosforge.jira.com/wiki/spaces/docs/pages/52035622/User+Manual',
             },
             { label: t('common:nav.profile'), path: 'profile' },
             { label: t('common:nav.settings'), path: 'settings' },
@@ -224,7 +242,7 @@ const MfNavbar = () => {
           onSelect={handleNavigate}
         />
       </div>
-    </div>
+    </header>
   )
 }
 

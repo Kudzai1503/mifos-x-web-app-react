@@ -27,10 +27,16 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-
-import { StaffApi, type StaffData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { Plus, Upload } from 'lucide-react'
+
+interface Employee {
+  id?: number
+  displayName?: string
+  isLoanOfficer?: boolean
+  officeName?: string
+  isActive?: boolean
+}
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faCircle,
@@ -38,10 +44,8 @@ import {
   faCircleXmark,
 } from '@fortawesome/free-solid-svg-icons'
 
-const employeesApi = new StaffApi(getConfiguration())
-
 const Employees = () => {
-  const [employees, setEmployees] = useState<StaffData[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -51,13 +55,10 @@ const Employees = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const res = await employeesApi.retrieveAll16(
-          undefined,
-          undefined,
-          undefined,
-          'all'
-        )
-        setEmployees(res.data || [])
+        const { data } = await fineract.get('/v1/staff', {
+          params: { status: 'all' },
+        })
+        setEmployees(data || [])
       } catch (err) {
         console.error('Failed to fetch employees', err)
       }

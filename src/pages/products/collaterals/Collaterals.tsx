@@ -25,20 +25,22 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  CollateralManagementApi,
-  type CollateralManagementData,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 
-// API instance for Collateral management
-const collateralApi = new CollateralManagementApi(getConfiguration())
+interface Collateral {
+  id: number
+  name?: string
+  quality?: string
+  basePrice?: number
+  pctToBase?: number
+  unitType?: string
+}
 
 const Collaterals = () => {
-  const [collaterals, setCollaterals] = useState<CollateralManagementData[]>([])
+  const [collaterals, setCollaterals] = useState<Collateral[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -48,8 +50,8 @@ const Collaterals = () => {
   useEffect(() => {
     const fetchCollaterals = async () => {
       try {
-        const res = await collateralApi.getAllCollaterals()
-        setCollaterals(res.data || [])
+        const { data } = await fineract.get('/v1/collateral-management')
+        setCollaterals(data || [])
       } catch (err) {
         console.error('Failed to fetch collaterals', err)
       }

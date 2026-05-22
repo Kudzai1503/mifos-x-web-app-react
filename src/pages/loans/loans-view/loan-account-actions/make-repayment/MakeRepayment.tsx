@@ -14,14 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 
-import {
-  LoanTransactionsApi,
-  type GetLoansLoanIdTransactionsTemplateResponse,
-  type PostLoansLoanIdTransactionsRequest,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const loanTransactionsApi = new LoanTransactionsApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 // tiny date helpers
 const toInputDate = (d = new Date()) =>
@@ -49,7 +42,7 @@ type PaymentType = { id: number; name: string }
 
 const MakeRepayment = () => {
   const navigate = useNavigate()
-  const { groupId, loanId } = useParams()
+  const { loanId } = useParams()
 
   // simple form state
   const [transactionDate, setTransactionDate] = useState(toInputDate())
@@ -81,25 +74,22 @@ const MakeRepayment = () => {
     async (isoDate: string) => {
       if (!loanId) return
       try {
-        const res = await loanTransactionsApi.retrieveTransactionTemplate(
-          Number(loanId),
-          'repayment',
-          'dd MMMM yyyy',
-          toFineractDate(isoDate) as unknown as object,
-          'en'
+        const { data } = await fineract.get(
+          `/v1/loans/${loanId}/transactions/template?command=repayment&transactionDate=${toFineractDate(isoDate)}&dateFormat=dd%20MMMM%20yyyy&locale=en`
         )
-        const tpl: GetLoansLoanIdTransactionsTemplateResponse = res.data ?? {}
-        setCurrencyCode(tpl.currency?.code ?? 'USD')
+        setCurrencyCode(data?.currency?.code ?? 'USD')
         setPaymentTypes(
-          (tpl.paymentTypeOptions ?? []).map(p => ({
-            id: p.id ?? 0,
-            name: p.name ?? '',
-          }))
+          (data?.paymentTypeOptions ?? []).map(
+            (p: { id?: number; name?: string }) => ({
+              id: p.id ?? 0,
+              name: p.name ?? '',
+            })
+          )
         )
-        setPrincipal(tpl.principalPortion ?? 0)
-        setInterest(tpl.interestPortion ?? 0)
-        setFees(tpl.feeChargesPortion ?? 0)
-        setPenalties(tpl.penaltyChargesPortion ?? 0)
+        setPrincipal(data?.principalPortion ?? 0)
+        setInterest(data?.interestPortion ?? 0)
+        setFees(data?.feeChargesPortion ?? 0)
+        setPenalties(data?.penaltyChargesPortion ?? 0)
       } catch (e) {
         setPaymentTypes([])
         setPrincipal(0)
@@ -122,7 +112,7 @@ const MakeRepayment = () => {
     if (!loanId || !canSubmit) return
     setSaving(true)
     try {
-      const payload: PostLoansLoanIdTransactionsRequest = {
+      const payload: Record<string, unknown> = {
         dateFormat: 'dd MMMM yyyy',
         locale: 'en',
         transactionDate: toFineractDate(transactionDate),
@@ -141,13 +131,12 @@ const MakeRepayment = () => {
         bankNumber: showPaymentDetails ? bankNumber || undefined : undefined,
       }
 
-      await loanTransactionsApi.executeLoanTransaction(
-        Number(loanId),
-        payload,
-        'repayment'
+      await fineract.post(
+        `/v1/loans/${loanId}/transactions?command=repayment`,
+        payload
       )
 
-      navigate(`/groups/${groupId}/loans-accounts/${loanId}/general`)
+      navigate(-1)
     } catch (e) {
       console.error('repayment failed', e)
     } finally {

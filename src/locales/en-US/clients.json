@@ -11,6 +11,7 @@
   "createGuarantor": "Create Guarantor",
   "errors": {
     "failedApproveClients": "Failed to approve one or more clients.",
+    "failedToLoadClients": "Failed to load clients. Please try again.",
     "failedLoadCenters": "Failed to load centers. Please try again.",
     "failedLoadGroups": "Failed to load groups. Please try again.",
     "noClientsSelected": "No clients selected for approval."

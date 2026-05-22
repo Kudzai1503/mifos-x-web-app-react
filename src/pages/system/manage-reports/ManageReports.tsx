@@ -29,20 +29,25 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { ReportsApi, type GetReportsResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark } from '@fortawesome/free-solid-svg-icons'
 
-// API instance
-const reportsApi = new ReportsApi(getConfiguration())
+interface Report {
+  reportName?: string
+  reportType?: string
+  reportSubType?: string
+  reportCategory?: string
+  coreReport?: boolean
+  useReport?: boolean
+}
 
 const ManageReports = () => {
   const navigate = useNavigate()
 
   // State
-  const [reports, setReports] = useState<GetReportsResponse[]>([])
+  const [reports, setReports] = useState<Report[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -51,8 +56,8 @@ const ManageReports = () => {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const response = await reportsApi.retrieveReportList()
-        setReports(response.data || [])
+        const { data } = await fineract.get('/v1/reports')
+        setReports(data || [])
       } catch (err) {
         console.error('Failed to fetch reports', err)
       }

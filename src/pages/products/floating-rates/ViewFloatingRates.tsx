@@ -7,25 +7,21 @@
  */
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Separator } from '@/components/ui/separator'
-import { FloatingRatesApi, type FloatingRateData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-
-// API instance for floating rates
-const floatingRateApi = new FloatingRatesApi(getConfiguration())
+import { useParams } from 'react-router-dom'
 
 const ViewFloatingRates = () => {
-  const _navigate = useNavigate() // Reserved for future use
   const { id } = useParams() // floating rate ID from route params
-  const [rates, setRates] = useState<FloatingRateData>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [rates, setRates] = useState<any>()
 
   // Fetch floating rate details when component mounts or id changes
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await floatingRateApi.retrieveOne13(Number(id)) // API call
-        setRates(res.data)
+        const { data } = await fineract.get(`/v1/floatingrates/${id}`)
+        setRates(data)
       } catch (err) {
         console.error('Failed to fetch floating rate', err)
       }

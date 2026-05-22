@@ -15,6 +15,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
 
 interface DropdownOption {
@@ -29,9 +30,17 @@ interface DropdownProps {
   name: React.ReactNode
   options: DropdownOption[]
   onSelect?: (path?: string) => void
+  triggerClassName?: string
+  contentClassName?: string
 }
 
-const Dropdown = ({ name, options, onSelect }: DropdownProps) => {
+const Dropdown = ({
+  name,
+  options,
+  onSelect,
+  triggerClassName,
+  contentClassName,
+}: DropdownProps) => {
   const navigate = useNavigate()
 
   const handleSelect = (path?: string) => {
@@ -46,7 +55,10 @@ const Dropdown = ({ name, options, onSelect }: DropdownProps) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className="flex items-center gap-2 px-4 py-2 text-base font-medium text-white bg-[#1074b9] hover:bg-[#0e6aa5] hover:text-white rounded-md transition duration-150"
+          className={cn(
+            'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10 hover:text-white',
+            triggerClassName
+          )}
           variant="ghost"
         >
           {name}
@@ -54,22 +66,25 @@ const Dropdown = ({ name, options, onSelect }: DropdownProps) => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-44 mt-2 rounded-md border border-gray-200 bg-white"
+        className={cn(
+          'mt-2 w-52 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950',
+          contentClassName
+        )}
         align="start"
       >
         {options.map((option, index) =>
           option.children ? (
             <DropdownMenuSub key={index}>
-              <DropdownMenuSubTrigger className="px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
+              <DropdownMenuSubTrigger className="rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900">
                 {option.label}
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="bg-white border">
+              <DropdownMenuSubContent className="border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-950">
                 {option.children.map((child, i) => (
                   <DropdownMenuItem
                     key={i}
                     onClick={() => handleSelect(child.path)}
                     disabled={child.disabled}
-                    className="cursor-pointer px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                    className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
                   >
                     {child.label}
                   </DropdownMenuItem>
@@ -81,7 +96,7 @@ const Dropdown = ({ name, options, onSelect }: DropdownProps) => {
               key={index}
               onClick={() => handleSelect(option.path)}
               disabled={option.disabled}
-              className="cursor-pointer px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+              className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-900"
             >
               {option.label}
             </DropdownMenuItem>

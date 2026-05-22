@@ -6,6 +6,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 import { useNavigate, useParams } from 'react-router-dom'
+
+import fineract from '@/lib/axios'
+
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Button } from '@/components/ui/button'
 
@@ -23,8 +26,17 @@ const UndoApprovalSharesAccount = () => {
     }
   }
 
-  const onSubmit = () => {
-    backToAccount()
+  const onSubmit = async () => {
+    try {
+      await fineract.post(
+        `/v1/accounts/share/${sharesAccountId}?command=undoapproval`,
+        {}
+      )
+      navigate(-1)
+    } catch (e) {
+      console.error('Undo approval failed', e)
+      alert('Undo approval failed')
+    }
   }
 
   return (

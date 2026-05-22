@@ -30,18 +30,21 @@ import {
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { CodesApi, type GetCodesResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark } from '@fortawesome/free-solid-svg-icons'
 
-const codesApi = new CodesApi(getConfiguration())
+interface Code {
+  id: number
+  name?: string
+  systemDefined?: boolean
+}
 
 const Codes = () => {
   const navigate = useNavigate()
 
-  const [codes, setCodes] = useState<GetCodesResponse[]>([])
+  const [codes, setCodes] = useState<Code[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -50,8 +53,8 @@ const Codes = () => {
   useEffect(() => {
     const fetchCodes = async () => {
       try {
-        const response = await codesApi.retrieveCodes()
-        setCodes(response.data || [])
+        const { data } = await fineract.get('/v1/codes')
+        setCodes(data || [])
       } catch (err) {
         console.error('Failed to fetch codes', err)
       }

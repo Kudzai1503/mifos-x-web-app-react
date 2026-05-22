@@ -12,30 +12,33 @@ import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  MappingFinancialActivitiesToAccountsApi,
-  type GetFinancialActivityAccountsResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API client
-const activityApi = new MappingFinancialActivitiesToAccountsApi(
-  getConfiguration()
-)
+interface FinancialActivityMapping {
+  id?: number
+  financialActivityData?: {
+    id?: number
+    name?: string
+    mappedGLAccountType?: string
+  }
+  glAccountData?: { id?: number; name?: string; glCode?: string }
+}
 
 const ViewFinancialActivityMappings = () => {
   const navigate = useNavigate()
   const { id } = useParams()
 
   // Loaded mapping record
-  const [mapping, setMapping] = useState<GetFinancialActivityAccountsResponse>()
+  const [mapping, setMapping] = useState<FinancialActivityMapping>()
 
   // Fetch mapping by id
   useEffect(() => {
     const fetchMapping = async () => {
       try {
-        const response = await activityApi.retreive(Number(id))
-        setMapping(response.data)
+        const { data } = await fineract.get(
+          `/v1/financialactivityaccounts/${id}`
+        )
+        setMapping(data)
       } catch (err) {
         console.error('Failed to fetch financial activity mapping', err)
       }
@@ -47,7 +50,7 @@ const ViewFinancialActivityMappings = () => {
   // Delete mapping then go back
   const handleDelete = async () => {
     try {
-      await activityApi.deleteGLAccount(Number(id))
+      await fineract.delete(`/v1/financialactivityaccounts/${id}`)
       navigate('/accounting/financial-activity-mappings')
     } catch (err) {
       console.error('Failed to delete mappings', err)

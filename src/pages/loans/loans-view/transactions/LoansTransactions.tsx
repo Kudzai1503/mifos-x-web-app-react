@@ -7,12 +7,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import type {
-  GetLoansLoanIdResponse,
-  GetLoansLoanIdTransactions,
-} from '@/fineract-api'
-import { LoansApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import {
   Table,
   TableBody,
@@ -23,19 +18,30 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 
-const loansApi = new LoansApi(getConfiguration())
-
-/** Extension for properties not on the generated type but returned at runtime. */
-type ExtendedLoan = GetLoansLoanIdResponse & {
+type ExtendedLoan = {
+  currency?: { code?: string }
   officeName?: string
+  transactions?: ExtendedTxn[]
 }
 
-type ExtendedTxn = Omit<GetLoansLoanIdTransactions, 'transactionType'> & {
+type ExtendedTxn = {
+  id?: number
+  externalId?: string
+  officeName?: string
+  date?: string
+  transactionDate?: string
+  type?: { value?: string }
   transactionType?: { value?: string }
+  amount?: number
+  principalPortion?: number
   principalComponent?: number
+  interestPortion?: number
   interestComponent?: number
+  feeChargesPortion?: number
   feeChargeComponent?: number
+  penaltyChargesPortion?: number
   penaltyChargeComponent?: number
+  outstandingLoanBalance?: number
   balance?: number
 }
 
@@ -54,9 +60,8 @@ const LoansTransactions = () => {
     ;(async () => {
       try {
         if (!loanId) return
-        const loanIdNum = Number(loanId)
-        const res = await loansApi.retrieveLoan(loanIdNum)
-        setLoan(res.data as ExtendedLoan)
+        const { data } = await fineract.get(`/v1/loans/${loanId}/transactions`)
+        setLoan({ transactions: data as ExtendedTxn[] } as ExtendedLoan)
       } catch (err) {
         console.error('Failed to fetch loan transactions', err)
       } finally {

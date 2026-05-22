@@ -12,8 +12,17 @@ import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons'
-import { TellerCashManagementApi, type TellerData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
+
+interface Teller {
+  id?: number
+  name?: string
+  officeName?: string
+  description?: string
+  startDate?: string | number[]
+  endDate?: string | number[]
+  status?: string
+}
 
 import {
   AlertDialog,
@@ -27,19 +36,17 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 
-const tellersApi = new TellerCashManagementApi(getConfiguration())
-
 const ViewTellers = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [teller, setTeller] = useState<TellerData>()
+  const [teller, setTeller] = useState<Teller>()
 
   // fetch teller details
   useEffect(() => {
     const fetchTeller = async () => {
       try {
-        const res = await tellersApi.findTeller(Number(id))
-        setTeller(res.data)
+        const { data } = await fineract.get(`/v1/tellers/${id}`)
+        setTeller(data)
       } catch (err) {
         console.error('Failed to fetch teller', err)
       }
@@ -50,7 +57,7 @@ const ViewTellers = () => {
   // delete teller and redirect
   const handleDelete = async () => {
     try {
-      await tellersApi.deleteTeller(Number(id))
+      await fineract.delete(`/v1/tellers/${id}`)
       navigate('/organization/tellers')
     } catch (err) {
       console.error('Failed to delete Teller', err)

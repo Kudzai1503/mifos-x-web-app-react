@@ -7,13 +7,13 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
+import { Plus, Network, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -26,51 +26,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
+import { PageHeader } from '@/components/custom/page/PageHeader'
+import fineract from '@/lib/axios'
 
-import {
-  GeneralLedgerAccountApi,
-  type GetGLAccountsResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-import { Plus } from 'lucide-react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faCircle,
-  faCircleCheck,
-  faCircleXmark,
-} from '@fortawesome/free-solid-svg-icons'
-
-//gl accounts base api
-const glApi = new GeneralLedgerAccountApi(getConfiguration())
+interface GlAccount {
+  id?: number
+  name?: string
+  glCode?: string
+  type?: { value?: string }
+  disabled?: boolean
+  manualEntriesAllowed?: boolean
+  usage?: { value?: string }
+}
 
 const ChartOfAccounts = () => {
   const navigate = useNavigate()
-
-  //stores all gl accounts
-  const [glAccounts, setGlAccounts] = useState<GetGLAccountsResponse[]>([])
-
-  //sets the gl code account name to be searched
+  const [glAccounts, setGlAccounts] = useState<GlAccount[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-
   const [page, setPage] = useState(1)
-
-  //sets the gl accounts per page
   const [itemsPerPage, setItemsPerPage] = useState(10)
 
-  //Api call to get all GL accounts data
   useEffect(() => {
-    const fetchGlAccounts = async () => {
-      try {
-        const response = await glApi.retrieveAllAccounts()
-        setGlAccounts(response.data)
-      } catch (err) {
-        console.error('Failed to fetch Gl Accounts', err)
-      }
-    }
-    fetchGlAccounts()
+    fineract
+      .get('/v1/glaccounts')
+      .then(r => setGlAccounts(r.data || []))
+      .catch(err => console.error('Failed to fetch GL accounts', err))
   }, [])
 
   const filtered = glAccounts.filter(
@@ -78,21 +59,14 @@ const ChartOfAccounts = () => {
       (acc.name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
       (acc.glCode?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
   )
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
   const paginated = filtered.slice(
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   )
 
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(parseInt(value))
-    setPage(1)
-  }
-
   return (
-    <div className="min-h-screen px-6 py-10 max-w-7xl mx-auto text-[15px]">
-      {/* Bread crumbs */}
+    <div className="px-6 py-8 max-w-7xl mx-auto">
       <AppBreadCrumbs
         items={[
           { label: 'Home', href: '/home' },
@@ -101,141 +75,167 @@ const ChartOfAccounts = () => {
         ]}
       />
 
-      {/* Add Account Button */}
-      <div className="mb-6">
-        <Button
-          className="bg-[#1074b9] hover:bg-[#1074c9] cursor-pointer px-6 py-3 text-base text-white"
-          onClick={() =>
-            navigate('/accounting/chart-of-accounts/gl-accounts/create')
+      <div className="mt-6">
+        <PageHeader
+          icon={Network}
+          title="Chart of Accounts"
+          subtitle={`${filtered.length} GL account${filtered.length !== 1 ? 's' : ''}`}
+          actions={
+            <Button
+              className="cursor-pointer"
+              onClick={() =>
+                navigate('/accounting/chart-of-accounts/gl-accounts/create')
+              }
+            >
+              <Plus className="h-4 w-4 mr-1.5" /> Add Account
+            </Button>
           }
-        >
-          <Plus className="mr-2" /> Add Account
-        </Button>
-      </div>
-
-      {/* Search Controls and Pages */}
-      <div className="flex flex-wrap justify-between items-center gap-6 mb-6">
-        <Input
-          placeholder="Search accounts..."
-          value={searchTerm}
-          onChange={e => {
-            setSearchTerm(e.target.value)
-            setPage(1)
-          }}
-          className="max-w-sm h-11 text-base"
         />
 
-        <div className="flex items-center gap-2">
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={handleItemsPerPageChange}
-          >
-            <SelectTrigger className="w-[140px] h-11 text-base">
-              <SelectValue placeholder="Items per page" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Prev
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
-          >
-            Next
-          </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="relative max-w-sm w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+            <Input
+              placeholder="Search by name or GL code…"
+              value={searchTerm}
+              onChange={e => {
+                setSearchTerm(e.target.value)
+                setPage(1)
+              }}
+              className="pl-9 h-9"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={v => {
+                setItemsPerPage(parseInt(v))
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="w-32 h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 25, 50].map(n => (
+                  <SelectItem key={n} value={n.toString()}>
+                    {n} / page
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+            >
+              Prev
+            </Button>
+            <span className="text-xs text-zinc-500 px-1">
+              {page} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* GL Table */}
-      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm">
-        <Table>
-          <TableCaption className="text-sm text-gray-500 dark:text-gray-400 pt-6 pb-2">
-            Showing {paginated.length} of {filtered.length} items • Page {page}{' '}
-            of {totalPages}
-          </TableCaption>
-          <TableHeader>
-            <TableRow className="text-base">
-              <TableHead className="px-6 py-4 text-gray-600 dark:text-gray-200">
-                Account
-              </TableHead>
-              <TableHead className="px-6 py-4 text-gray-600 dark:text-gray-200">
-                GL Code
-              </TableHead>
-              <TableHead className="px-6 py-4 text-gray-600 dark:text-gray-200">
-                Type
-              </TableHead>
-              <TableHead className="px-6 py-4 text-gray-600 dark:text-gray-200">
-                Disabled
-              </TableHead>
-              <TableHead className="px-6 py-4 text-gray-600 dark:text-gray-200">
-                Manual Entries
-              </TableHead>
-              <TableHead className="px-6 py-4 text-gray-600 dark:text-gray-200">
-                Used As
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {paginated.map(acc => (
-              <TableRow
-                key={acc.id}
-                className="cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors text-base"
-                onClick={() =>
-                  navigate(
-                    `/accounting/chart-of-accounts/gl-accounts/view/${acc.id}`
-                  )
-                }
-              >
-                <TableCell className="px-6 py-4 font-medium text-zinc-800 dark:text-zinc-100">
-                  {acc.name}
-                </TableCell>
-                <TableCell className="px-6 py-4 text-zinc-700 dark:text-zinc-200">
-                  {acc.glCode}
-                </TableCell>
-                <TableCell className="px-6 py-4 text-zinc-700 dark:text-zinc-200">
-                  {acc.type?.value}
-                </TableCell>
-                <TableCell className="px-6 py-4 text-zinc-800 dark:text-zinc-100">
-                  <FontAwesomeIcon
-                    icon={faCircle}
-                    className={
-                      acc.disabled
-                        ? 'text-red-500 w-4 h-4'
-                        : 'text-green-500 w-4 h-4'
-                    }
-                  />
-                </TableCell>
-                <TableCell className="px-6 py-4 text-zinc-800 dark:text-zinc-100">
-                  <FontAwesomeIcon
-                    icon={
-                      acc.manualEntriesAllowed ? faCircleCheck : faCircleXmark
-                    }
-                    className={`w-4 h-4 ${acc.manualEntriesAllowed ? 'text-green-500' : 'text-red-500'}`}
-                  />
-                </TableCell>
-                <TableCell className="px-6 py-4 text-zinc-800 dark:text-zinc-100">
-                  {acc.usage?.value}
-                </TableCell>
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/60">
+                <TableHead className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Account
+                </TableHead>
+                <TableHead className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  GL Code
+                </TableHead>
+                <TableHead className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Type
+                </TableHead>
+                <TableHead className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Used As
+                </TableHead>
+                <TableHead className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Manual Entries
+                </TableHead>
+                <TableHead className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Status
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {paginated.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="px-5 py-10 text-center text-sm text-zinc-400"
+                  >
+                    No GL accounts found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginated.map(acc => (
+                  <TableRow
+                    key={acc.id}
+                    className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+                    onClick={() =>
+                      navigate(
+                        `/accounting/chart-of-accounts/gl-accounts/view/${acc.id}`
+                      )
+                    }
+                  >
+                    <TableCell className="px-5 py-3.5 font-medium text-sm text-zinc-900 dark:text-zinc-100">
+                      {acc.name}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-sm font-mono text-zinc-600 dark:text-zinc-400">
+                      {acc.glCode}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-sm text-zinc-600 dark:text-zinc-400">
+                      {acc.type?.value ?? '—'}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-sm text-zinc-600 dark:text-zinc-400">
+                      {acc.usage?.value ?? '—'}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5">
+                      <Badge
+                        variant="outline"
+                        className={
+                          acc.manualEntriesAllowed
+                            ? 'border-green-300 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                            : 'border-zinc-200 text-zinc-500'
+                        }
+                      >
+                        {acc.manualEntriesAllowed ? 'Allowed' : 'Restricted'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5">
+                      <Badge
+                        variant="outline"
+                        className={
+                          acc.disabled
+                            ? 'border-red-300 bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400'
+                            : 'border-green-300 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                        }
+                      >
+                        <span
+                          className={`mr-1.5 inline-block size-1.5 rounded-full ${acc.disabled ? 'bg-red-500' : 'bg-green-500'}`}
+                        />
+                        {acc.disabled ? 'Disabled' : 'Active'}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   )

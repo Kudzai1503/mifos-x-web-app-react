@@ -11,12 +11,15 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { useTranslation } from 'react-i18next'
-import { CentersApi, type GetCentersCenterIdResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 
-const centersApi = new CentersApi(getConfiguration())
+interface CenterData {
+  id?: number
+  name?: string
+  officeId?: number
+}
 
 const EditCenters = () => {
   const navigate = useNavigate()
@@ -24,14 +27,13 @@ const EditCenters = () => {
   const { t } = useTranslation('centers')
   const { t: tc } = useTranslation('common')
 
-  const [center, setCenter] = useState<GetCentersCenterIdResponse>()
-  const [_staffId, _setStaffId] = useState<string>('') // Reserved for future use
+  const [center, setCenter] = useState<CenterData>()
 
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await centersApi.retrieveOne14(Number(id))
-        setCenter(res.data)
+        const { data } = await fineract.get(`/v1/centers/${id}`)
+        setCenter(data as CenterData)
       } catch (err) {
         console.error("Can't fetch center", err)
       }

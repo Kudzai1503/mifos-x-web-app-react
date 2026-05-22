@@ -8,14 +8,22 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faCircle } from '@fortawesome/free-solid-svg-icons'
 import { useEffect, useState } from 'react'
-import { StaffApi, type StaffData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useTranslation } from 'react-i18next'
 
 interface StaffNavigationProps {
   staffId: number
 }
-const staffApi = new StaffApi(getConfiguration())
+
+interface StaffData {
+  id?: number
+  displayName?: string
+  officeName?: string
+  isActive?: boolean
+  isLoanOfficer?: boolean
+  joiningDate?: string
+  mobileNo?: string
+}
 
 const StaffNavigation = ({ staffId }: StaffNavigationProps) => {
   const [staff, setStaff] = useState<StaffData | null>(null)
@@ -24,8 +32,8 @@ const StaffNavigation = ({ staffId }: StaffNavigationProps) => {
   useEffect(() => {
     const fetchStaffDetails = async () => {
       try {
-        const res = await staffApi.retrieveOne8(staffId)
-        setStaff(res.data)
+        const { data } = await fineract.get<StaffData>(`/v1/staff/${staffId}`)
+        setStaff(data)
       } catch (err) {
         console.error('Failed to fetch staff details', err)
       }

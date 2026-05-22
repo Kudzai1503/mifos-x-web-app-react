@@ -15,27 +15,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@radix-ui/react-checkbox'
 
-import {
-  GroupsApi,
-  OfficesApi,
-  StaffApi,
-  type GetOfficesResponse,
-  type StaffData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useTranslation } from 'react-i18next'
 
-const groupsApi = new GroupsApi(getConfiguration())
-const officesApi = new OfficesApi(getConfiguration())
-const staffApi = new StaffApi(getConfiguration())
+interface OfficeOption {
+  id?: number
+  name?: string
+}
+
+interface StaffOption {
+  id?: number
+  displayName?: string
+}
 
 const CreateGroups = () => {
   const navigate = useNavigate()
   const { t } = useTranslation('groups')
   const { t: tc } = useTranslation('common')
 
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
-  const [staff, setStaff] = useState<StaffData[]>([])
+  const [offices, setOffices] = useState<OfficeOption[]>([])
+  const [staff, setStaff] = useState<StaffOption[]>([])
 
   const [formData, setFormData] = useState({
     name: '',
@@ -51,8 +50,8 @@ const CreateGroups = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const officeRes = await officesApi.retrieveOffices()
-        setOffices(officeRes.data ?? [])
+        const { data } = await fineract.get<OfficeOption[]>('/v1/offices')
+        setOffices(data ?? [])
       } catch (e) {
         console.error(e)
       }
@@ -65,8 +64,10 @@ const CreateGroups = () => {
       try {
         setStaff([])
         if (!formData.officeId) return
-        const res = await staffApi.retrieveAll16(Number(formData.officeId))
-        setStaff(Array.from(res.data ?? []))
+        const { data } = await fineract.get<StaffOption[]>('/v1/staff', {
+          params: { officeId: Number(formData.officeId) },
+        })
+        setStaff(data ?? [])
       } catch (e) {
         console.error(e)
       }
@@ -76,17 +77,10 @@ const CreateGroups = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await groupsApi.create8({
+      await fineract.post('/v1/groups', {
         name: formData.name,
         officeId: Number(formData.officeId),
-        // staffId: formData.staffId,
         active: formData.active,
-        // externalId: formData.externalId || undefined,
-        // submittedOnDate: formData.submittedOnDate || undefined,
-        // activationDate:
-        //   formData.active && formData.activationDate
-        //     ? formData.activationDate
-        //     : undefined,
       })
       navigate('/groups')
     } catch (e) {

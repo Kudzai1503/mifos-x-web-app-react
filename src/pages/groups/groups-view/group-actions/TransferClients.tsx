@@ -15,15 +15,18 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 
-import {
-  GroupsApi,
-  type GetGroupsGroupIdResponse,
-  type GetGroupsPageItems,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useTranslation } from 'react-i18next'
 
-const groupsApi = new GroupsApi(getConfiguration())
+interface GroupData {
+  id?: number
+  name?: string
+}
+
+interface GroupListItem {
+  id?: number
+  name?: string
+}
 
 const TransferClients = () => {
   const navigate = useNavigate()
@@ -31,7 +34,7 @@ const TransferClients = () => {
   const { t } = useTranslation('groups')
   const { t: tc } = useTranslation('common')
 
-  const [group, setGroup] = useState<GetGroupsGroupIdResponse | null>(null)
+  const [group, setGroup] = useState<GroupData | null>(null)
   const [destOptions, setDestOptions] = useState<
     { id: number; name: string }[]
   >([])
@@ -45,13 +48,10 @@ const TransferClients = () => {
     ;(async () => {
       if (!id) return
       try {
-        const res = await groupsApi.retrieveOne15(
-          Number(id),
-          undefined,
-          undefined,
-          { params: { associations: 'all' } }
-        )
-        setGroup(res.data)
+        const { data } = await fineract.get(`/v1/groups/${id}`, {
+          params: { associations: 'all' },
+        })
+        setGroup(data as GroupData)
       } catch (e) {
         console.error('Failed to fetch group (associations=all)', e)
       }
@@ -62,22 +62,18 @@ const TransferClients = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await groupsApi.retrieveAll24()
-        const pageItems: GetGroupsPageItems[] = res.data?.pageItems
-          ? Array.from(res.data.pageItems)
-          : []
+        const { data } = await fineract.get('/v1/groups', {
+          params: { paged: true, limit: 200 },
+        })
+        const pageItems: GroupListItem[] = data?.pageItems ?? []
         const opts = pageItems
-          .filter(
-            (g): g is GetGroupsPageItems & { id: number } =>
-              g.id != null && String(g.id) !== id
-          )
+          .filter(g => g.id != null && String(g.id) !== id)
           .map(g => ({
-            id: g.id,
+            id: g.id as number,
             name: g.name ?? t('transferClients.groupFallback', { id: g.id }),
           }))
         setDestOptions(opts)
       } catch (e) {
-        // if list call isn't available, leave empty; you can fallback to manual input below
         console.error('Failed to fetch destination groups', e)
       }
     })()
@@ -166,15 +162,14 @@ const TransferClients = () => {
               onClick={async () => {
                 if (!id) return
                 try {
-                  await groupsApi.activateOrGenerateCollectionSheet(
-                    Number(id),
+                  await fineract.post(
+                    `/v1/groups/${id}?command=transferClients`,
                     {
                       destinationGroupId: Number(destinationGroupId),
-                      clients: new Set(
-                        selectedMemberIds.map(mid => ({ id: Number(mid) }))
-                      ),
-                    },
-                    'transferClients'
+                      clients: selectedMemberIds.map(mid => ({
+                        id: Number(mid),
+                      })),
+                    }
                   )
                   navigate(`/groups/${id}/general`)
                 } catch (err) {

@@ -28,19 +28,19 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-import {
-  SavingsProductApi,
-  type GetSavingsProductsResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const savingsApi = new SavingsProductApi(getConfiguration())
+interface SavingsProduct {
+  id: number
+  name?: string
+  shortName?: string
+}
 
 const SavingsProducts = () => {
   const navigate = useNavigate()
 
   // list + ui state
-  const [products, setProducts] = useState<GetSavingsProductsResponse[]>([])
+  const [products, setProducts] = useState<SavingsProduct[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -49,8 +49,8 @@ const SavingsProducts = () => {
   useEffect(() => {
     const fetchSavings = async () => {
       try {
-        const res = await savingsApi.retrieveAll34()
-        setProducts(res.data || [])
+        const { data } = await fineract.get('/v1/savingsproducts')
+        setProducts(data || [])
       } catch (err) {
         console.error('Failed to fetch savings products', err)
       }

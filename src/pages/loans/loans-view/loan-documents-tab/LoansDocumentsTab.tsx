@@ -17,10 +17,8 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { DownloadCloud, X, Plus } from 'lucide-react'
-import type { GetLoansLoanIdResponse } from '@/fineract-api'
 
-// Extension for documents property not on the generated type
-type ExtendedLoan = GetLoansLoanIdResponse & {
+type LoanWithDocs = {
   documents?: Array<{
     id?: number | string
     name?: string
@@ -29,7 +27,7 @@ type ExtendedLoan = GetLoansLoanIdResponse & {
   }>
 }
 
-type Ctx = { loan: ExtendedLoan | null; refresh?: () => Promise<void> }
+type Ctx = { loan: LoanWithDocs | null; refresh?: () => Promise<void> }
 
 type LoanDoc = {
   id?: number | string

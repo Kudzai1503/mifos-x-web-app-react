@@ -5,14 +5,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+
+import fineract from '@/lib/axios'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+
+interface StaffOption {
+  id: number | string
+  name: string
+  displayName?: string
+}
 
 const SavingsAccountAssignStaff = () => {
   const { groupId, accountId } = useParams()
@@ -21,6 +29,24 @@ const SavingsAccountAssignStaff = () => {
   // form state
   const [staffId, setStaffId] = useState<string>('')
   const [assignmentDate, setAssignmentDate] = useState<string>('')
+  const [staffOptions, setStaffOptions] = useState<StaffOption[]>([])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const { data } = await fineract.get('/v1/staff')
+        const list = Array.isArray(data) ? data : []
+        setStaffOptions(
+          list.map((s: StaffOption) => ({
+            id: s.id,
+            name: s.displayName || s.name,
+          }))
+        )
+      } catch (e) {
+        console.error('Failed to load staff', e)
+      }
+    })()
+  }, [])
 
   // go back to savings account general page
   const backToAccount = () => {
@@ -31,16 +57,19 @@ const SavingsAccountAssignStaff = () => {
     }
   }
 
-  // submit handler — placeholder for API call
-  const onSubmit = () => {
-    backToAccount()
+  // submit handler
+  const onSubmit = async () => {
+    try {
+      await fineract.post(
+        `/v1/savingsaccounts/${accountId}?command=assignSavingsOfficer`,
+        { toSavingsOfficerId: Number(staffId), assignmentDate }
+      )
+      navigate(-1)
+    } catch (e) {
+      console.error('Assign staff failed', e)
+      alert('Assign staff failed')
+    }
   }
-
-  const staffOptions = [
-    { id: '101', name: 'Alice M.' },
-    { id: '102', name: 'Brian K.' },
-    { id: '103', name: 'Chandra P.' },
-  ]
 
   return (
     <div className="min-h-screen px-6 py-10">

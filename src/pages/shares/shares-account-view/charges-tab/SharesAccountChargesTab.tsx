@@ -8,6 +8,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -31,25 +33,26 @@ interface ShareCharge {
 }
 
 const SharesAccountChargesTab = () => {
-  const { accountId } = useParams()
+  const { sharesAccountId } = useParams()
   const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true) // loading state
   const [charges, setCharges] = useState<ShareCharge[]>([]) // list of charges
   const [accountStatus, setAccountStatus] = useState<string>('') // account status text
 
-  // fetch share account charges when accountId changes
+  // fetch share account charges when sharesAccountId changes
   useEffect(() => {
-    if (!accountId) return
+    if (!sharesAccountId) return
     ;(async () => {
       try {
-        const res = await fetch(
-          `/api/v1/accounts/share/${accountId}?template=false`
+        const { data } = await fineract.get(
+          `/v1/accounts/share/${sharesAccountId}/charges`
         )
-        const data = await res.json()
-        const list = Array.isArray(data?.charges) ? data.charges : []
+        const list = Array.isArray(data) ? data : data?.pageItems || []
         setCharges(list)
-        setAccountStatus(String(data?.status?.value || ''))
+        // fetch account status
+        const acct = await fineract.get(`/v1/accounts/share/${sharesAccountId}`)
+        setAccountStatus(String(acct?.data?.status?.value || ''))
       } catch (e) {
         console.error('Failed to load share account charges', e)
         setCharges([])
@@ -57,7 +60,7 @@ const SharesAccountChargesTab = () => {
         setLoading(false)
       }
     })()
-  }, [accountId])
+  }, [sharesAccountId])
 
   // action handlers
   const onPay = (id: number) => alert(`Pay charge ${id}`)

@@ -8,6 +8,7 @@
 import { BrowserRouter } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { store } from '@/app/store'
+import { Toaster } from '@/components/ui/toaster'
 import AppRoutes from './router/AppRoutes'
 
 const App = () => {
@@ -16,6 +17,7 @@ const App = () => {
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>
+      <Toaster />
     </Provider>
   )
 }

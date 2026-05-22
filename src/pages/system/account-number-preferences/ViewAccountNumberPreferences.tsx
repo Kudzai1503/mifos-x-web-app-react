@@ -25,26 +25,20 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 
-import {
-  AccountNumberFormatApi,
-  type GetAccountNumberFormatsIdResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const accountNumberApi = new AccountNumberFormatApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 const ViewAccountNumberPreferences = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [accountPref, setAccountPref] =
-    useState<GetAccountNumberFormatsIdResponse | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [accountPref, setAccountPref] = useState<any | null>(null)
 
   // Fetch details for selected account number preference
   useEffect(() => {
     const fetchAccountNumberPreference = async () => {
       try {
-        const res = await accountNumberApi.retrieveOne(Number(id))
-        setAccountPref(res.data)
+        const { data } = await fineract.get(`/v1/accountnumberformats/${id}`)
+        setAccountPref(data)
       } catch (err) {
         console.error('Failed to fetch account preference details', err)
       }

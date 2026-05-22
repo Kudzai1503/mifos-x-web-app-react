@@ -8,6 +8,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,8 +29,16 @@ const ActivateSavingsAccount = () => {
     }
   }
 
-  const onSubmit = () => {
-    backToAccount()
+  const onSubmit = async () => {
+    try {
+      await fineract.post(`/v1/savingsaccounts/${accountId}?command=activate`, {
+        activatedOnDate,
+      })
+      navigate(-1)
+    } catch (e) {
+      console.error('Activate failed', e)
+      alert('Activate failed')
+    }
   }
 
   return (

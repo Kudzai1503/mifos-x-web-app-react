@@ -5,8 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-import { OfficesApi, StaffApi, type GetOfficesResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { faBuilding } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useEffect, useState } from 'react'
@@ -16,22 +15,30 @@ interface OfficeNavigationProps {
   officeId: number
 }
 
-const officeApi = new OfficesApi(getConfiguration())
-const staffApi = new StaffApi(getConfiguration())
+interface OfficeData {
+  id?: number
+  name?: string
+  externalId?: string
+  openingDate?: string
+}
 
 const OfficeNavigation = ({ officeId }: OfficeNavigationProps) => {
-  const [office, setOffice] = useState<GetOfficesResponse | null>(null)
+  const [office, setOffice] = useState<OfficeData | null>(null)
   const [staffCount, setStaffCount] = useState<number>(0)
   const { t, i18n } = useTranslation('common')
 
   useEffect(() => {
     const fetchOfficeDetails = async () => {
       try {
-        const officeRes = await officeApi.retrieveOffice(Number(officeId))
-        setOffice(officeRes.data)
+        const { data: officeData } = await fineract.get<OfficeData>(
+          `/v1/offices/${officeId}`
+        )
+        setOffice(officeData)
 
-        const staffCountRes = await staffApi.retrieveAll16(Number(officeId))
-        setStaffCount(staffCountRes.data.length)
+        const { data: staffData } = await fineract.get<unknown[]>('/v1/staff', {
+          params: { officeId: Number(officeId) },
+        })
+        setStaffCount(Array.isArray(staffData) ? staffData.length : 0)
       } catch (err) {
         console.error('Failed to get Office details', err)
       }

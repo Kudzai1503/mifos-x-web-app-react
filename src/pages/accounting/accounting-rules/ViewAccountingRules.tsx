@@ -12,26 +12,30 @@ import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { AccountingRulesApi, type AccountingRuleData } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-//accounting API
-const accountingRuleApi = new AccountingRulesApi(getConfiguration())
+interface AccountingRule {
+  id?: number
+  officeName?: string
+  description?: string
+  allowMultipleDebitEntries?: boolean
+  allowMultipleCreditEntries?: boolean
+  debitAccounts?: { name?: string; glCode?: string }[]
+  creditAccounts?: { name?: string; glCode?: string }[]
+}
 
 const ViewAccountingRules = () => {
   const navigate = useNavigate()
   const { id } = useParams()
 
   //state to fetch accouting data
-  const [accountingRule, setAccountingRule] = useState<AccountingRuleData>()
+  const [accountingRule, setAccountingRule] = useState<AccountingRule>()
 
   useEffect(() => {
     const fetchAccountingRule = async () => {
       try {
-        const response = await accountingRuleApi.retreiveAccountingRule(
-          Number(id)
-        )
-        setAccountingRule(response.data)
+        const { data } = await fineract.get(`/v1/accountingrules/${id}`)
+        setAccountingRule(data)
       } catch (err) {
         console.error('Failed to fetch Accounting rules data', err)
       }
@@ -42,7 +46,7 @@ const ViewAccountingRules = () => {
 
   const handleDelete = async () => {
     try {
-      await accountingRuleApi.deleteAccountingRule(Number(id))
+      await fineract.delete(`/v1/accountingrules/${id}`)
       navigate('/accounting/accounting-rules')
     } catch (err) {
       console.error('Failed to delete accounting rules', err)

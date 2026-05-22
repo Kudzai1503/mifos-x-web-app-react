@@ -8,11 +8,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import {
-  SavingsAccountApi,
-  type SavingsAccountChargeData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -24,7 +20,21 @@ import {
   TableCell,
 } from '@/components/ui/table'
 
-const api = new SavingsAccountApi(getConfiguration())
+interface SavingsAccountCharge {
+  id?: number
+  name?: string
+  penalty?: boolean
+  isActive?: boolean
+  chargeTimeType?: { value?: string }
+  chargeCalculationType?: { value?: string }
+  dueDate?: string
+  feeOnMonthDay?: unknown[]
+  amount?: number
+  amountPaid?: number
+  amountWaived?: number
+  amountOutstanding?: number
+  recurring?: boolean
+}
 
 const SavingProductChargesTab = () => {
   const { accountId } = useParams()
@@ -32,7 +42,7 @@ const SavingProductChargesTab = () => {
 
   // state
   const [loading, setLoading] = useState(true)
-  const [charges, setCharges] = useState<SavingsAccountChargeData[]>([])
+  const [charges, setCharges] = useState<SavingsAccountCharge[]>([])
   const [showInactive, setShowInactive] = useState(false)
   const [accountStatus, setAccountStatus] = useState<string>('')
 
@@ -41,14 +51,13 @@ const SavingProductChargesTab = () => {
     if (!accountId) return
     ;(async () => {
       try {
-        const res = await api.retrieveOne25(
-          Number(accountId),
-          undefined,
-          undefined,
-          'charges'
+        const { data } = await fineract.get(
+          `/v1/savingsaccounts/${accountId}/charges`
         )
-        setCharges(res?.data?.charges || [])
-        setAccountStatus(res?.data?.status?.value || '')
+        setCharges(Array.isArray(data) ? data : data?.pageItems || [])
+        // fetch account status separately if needed
+        const acct = await fineract.get(`/v1/savingsaccounts/${accountId}`)
+        setAccountStatus(acct?.data?.status?.value || '')
       } catch (e) {
         console.error('Failed to load charges', e)
       } finally {
@@ -66,8 +75,7 @@ const SavingProductChargesTab = () => {
   const onPay = (id: number) => alert(`Pay charge ${id}`)
   const onWaive = (id: number) => alert(`Waive charge ${id}`)
   const onInactivate = (id: number) => alert(`Inactivate charge ${id}`)
-  const onEdit = (charge: SavingsAccountChargeData) =>
-    navigate(`edit/${charge.id}`)
+  const onEdit = (charge: SavingsAccountCharge) => navigate(`edit/${charge.id}`)
   const onDelete = (id: number) => {
     if (confirm('Delete this charge?')) alert(`Delete charge ${id}`)
   }

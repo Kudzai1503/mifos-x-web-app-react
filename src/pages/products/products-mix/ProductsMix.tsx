@@ -29,17 +29,18 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { LoanProductsApi, type GetLoanProductsResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API client instance for Loan Products
-const productMixApi = new LoanProductsApi(getConfiguration())
+interface LoanProductMix {
+  id: number
+  name?: string
+}
 
 const ProductsMix = () => {
   const navigate = useNavigate()
 
   // state for storing product mixes
-  const [mixes, setMixes] = useState<GetLoanProductsResponse[]>([])
+  const [mixes, setMixes] = useState<LoanProductMix[]>([])
   const [searchTerm, setSearchTerm] = useState('') // filter input
   const [page, setPage] = useState(1) // pagination current page
   const [itemsPerPage, setItemsPerPage] = useState(10) // rows per page
@@ -48,10 +49,10 @@ const ProductsMix = () => {
     // fetch loan products with productMixes association
     const fetchProductMixes = async () => {
       try {
-        const res = await productMixApi.retrieveAllLoanProducts({
+        const { data } = await fineract.get('/v1/loanproducts', {
           params: { associations: 'productMixes' },
         })
-        setMixes(res.data || [])
+        setMixes(data || [])
       } catch (err) {
         console.error('Failed to fetch product mixes', err)
       }

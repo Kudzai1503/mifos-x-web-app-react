@@ -28,14 +28,17 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { FundsApi, type FundData } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-const fundsApi = new FundsApi(getConfiguration())
+interface Fund {
+  id?: number
+  name?: string
+  externalId?: string
+}
 
 const Funds = () => {
   const navigate = useNavigate()
-  const [funds, setFunds] = useState<FundData[]>([])
+  const [funds, setFunds] = useState<Fund[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -44,8 +47,8 @@ const Funds = () => {
   useEffect(() => {
     const fetchFunds = async () => {
       try {
-        const response = await fundsApi.retrieveFunds()
-        setFunds(response.data || [])
+        const { data } = await fineract.get('/v1/funds')
+        setFunds(data || [])
       } catch (err) {
         console.error('Failed to fetch funds', err)
       }

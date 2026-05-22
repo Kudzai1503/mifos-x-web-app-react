@@ -8,21 +8,26 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useParams } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import Dropdown from '@/components/custom/navbar/Dropdown'
 import AppTabs from '@/components/custom/tabs/AppTabs'
-
-import {
-  ShareAccountApi,
-  type GetAccountsTypeAccountIdResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
 
 import { faCircle, faMoneyBill } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from 'lucide-react'
 
-const shareApi = new ShareAccountApi(getConfiguration())
+interface SharesAcct {
+  status?: Record<string, unknown>
+  productName?: string
+  accountNo?: string
+  clientName?: string
+  currentMarketPrice?: string | number
+  lockinPeriod?: string | number
+  lockPeriodTypeEnum?: Record<string, unknown>
+  [key: string]: unknown
+}
 
 type MenuItem = {
   label: string
@@ -84,9 +89,7 @@ function buildSharesMenu(
 
 const SharesAccountView = () => {
   const { clientId, sharesAccountId } = useParams()
-  const [acct, setAcct] = useState<GetAccountsTypeAccountIdResponse | null>(
-    null
-  )
+  const [acct, setAcct] = useState<SharesAcct | null>(null)
   const [loading, setLoading] = useState(true)
 
   // load shares account details by ID
@@ -94,12 +97,10 @@ const SharesAccountView = () => {
     if (!sharesAccountId) return
     ;(async () => {
       try {
-        const res = await shareApi.retrieveAccount(
-          Number(sharesAccountId),
-          'share',
-          { params: { template: false } }
+        const { data } = await fineract.get(
+          `/v1/accounts/share/${sharesAccountId}`
         )
-        setAcct(res.data)
+        setAcct(data)
       } catch (e) {
         console.error('Failed to load share account', e)
       } finally {
@@ -120,9 +121,9 @@ const SharesAccountView = () => {
         : 'text-zinc-400'
 
   // basic account info
-  const productName = acct?.productName ?? '—'
-  const accountNo = acct?.accountNo ?? '—'
-  const holderName = acct?.clientName ?? '—'
+  const productName = (acct?.productName as string | undefined) ?? '—'
+  const accountNo = (acct?.accountNo as string | undefined) ?? '—'
+  const holderName = (acct?.clientName as string | undefined) ?? '—'
   const currentMarketPrice = acct?.currentMarketPrice ?? '—'
 
   // sub-tabs inside Shares account view

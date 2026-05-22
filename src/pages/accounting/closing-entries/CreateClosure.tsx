@@ -14,22 +14,18 @@ import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  AccountingClosureApi,
-  OfficesApi,
-  type GetOfficesResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API clients
-const officesApi = new OfficesApi(getConfiguration())
-const closureApi = new AccountingClosureApi(getConfiguration())
+interface OfficeItem {
+  id?: number
+  name?: string
+}
 
 const CreateClosure = () => {
   const navigate = useNavigate()
 
   // Offices list + form state
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<OfficeItem[]>([])
 
   const [formData, setFormData] = useState({
     officeId: '',
@@ -41,8 +37,8 @@ const CreateClosure = () => {
   useEffect(() => {
     const fetchOffices = async () => {
       try {
-        const response = await officesApi.retrieveOffices()
-        setOffices(response.data || [])
+        const { data } = await fineract.get('/v1/offices')
+        setOffices(data || [])
       } catch (err) {
         console.error('Failed to fetch offices', err)
       }
@@ -73,7 +69,7 @@ const CreateClosure = () => {
     )
 
     try {
-      await closureApi.createGLClosure({
+      await fineract.post('/v1/glclosures', {
         officeId: Number(formData.officeId),
         closingDate: formattedDate,
         comments: formData.comments,

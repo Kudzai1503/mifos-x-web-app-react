@@ -8,6 +8,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -30,8 +32,17 @@ const RedeemShares = () => {
     }
   }
 
-  const onSubmit = () => {
-    backToAccount()
+  const onSubmit = async () => {
+    try {
+      await fineract.post(
+        `/v1/accounts/share/${sharesAccountId}?command=redeemShares`,
+        { requestedDate, requestedShares: Number(requestedShares) }
+      )
+      navigate(-1)
+    } catch (e) {
+      console.error('Redeem shares failed', e)
+      alert('Redeem shares failed')
+    }
   }
 
   return (

@@ -14,26 +14,24 @@ import { Input } from '@/components/ui/input'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { Checkbox } from '@/components/ui/checkbox'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
+import fineract from '@/lib/axios'
 
-import {
-  BulkLoansApi,
-  OfficesApi,
-  StaffApi,
-  type GetOfficesResponse,
-  type StaffData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+interface Office {
+  id?: number
+  name?: string
+}
 
-const officesApi = new OfficesApi(getConfiguration())
-const staffApi = new StaffApi(getConfiguration())
-const bulkLoansApi = new BulkLoansApi(getConfiguration())
+interface StaffMember {
+  id?: number
+  displayName?: string
+}
 
 const BulkLoanReassignment = () => {
   const navigate = useNavigate()
 
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
-  const [fromLoanOfficers, setFromLoanOfficers] = useState<StaffData[]>([])
-  const [toLoanOfficers, setToLoanOfficers] = useState<StaffData[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
+  const [fromLoanOfficers, setFromLoanOfficers] = useState<StaffMember[]>([])
+  const [toLoanOfficers, setToLoanOfficers] = useState<StaffMember[]>([])
   const [officerTemplate, setOfficerTemplate] =
     useState<Record<string, unknown>>()
 
@@ -50,8 +48,8 @@ const BulkLoanReassignment = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await officesApi.retrieveOffices()
-        setOffices(res.data || [])
+        const { data } = await fineract.get('/v1/offices')
+        setOffices(data || [])
       } catch (err) {
         console.error('Failed to fetch offices', err)
       }
@@ -67,12 +65,12 @@ const BulkLoanReassignment = () => {
     }
     ;(async () => {
       try {
-        const res = await staffApi.retrieveAll16(
-          Number(formData.officeId),
-          undefined,
-          true
-        )
-        const staff = res.data ?? []
+        const { data: staff = [] } = await fineract.get('/v1/staff', {
+          params: {
+            officeId: Number(formData.officeId),
+            loanOfficersOnly: true,
+          },
+        })
         setFromLoanOfficers(staff)
         setToLoanOfficers(staff)
       } catch (err) {
@@ -89,12 +87,15 @@ const BulkLoanReassignment = () => {
     }
     ;(async () => {
       try {
-        const res = await bulkLoansApi.loanReassignmentTemplate(
-          Number(formData.officeId),
-          Number(formData.fromLoanOfficerId)
+        const { data } = await fineract.get(
+          '/v1/loans/loanreassignment/template',
+          {
+            params: {
+              officeId: Number(formData.officeId),
+              fromLoanOfficerId: Number(formData.fromLoanOfficerId),
+            },
+          }
         )
-        const data =
-          typeof res.data === 'string' ? JSON.parse(res.data) : res.data
         setOfficerTemplate(data as Record<string, unknown>)
       } catch (err) {
         console.error('Failed to fetch reassignment template', err)
@@ -118,7 +119,7 @@ const BulkLoanReassignment = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const payload = JSON.stringify({
+      const payload = {
         fromLoanOfficerId: Number(formData.fromLoanOfficerId),
         toLoanOfficerId: Number(formData.toLoanOfficerId),
         assignmentDate: formData.assignmentDate,
@@ -128,8 +129,8 @@ const BulkLoanReassignment = () => {
           (acc, id) => ({ ...acc, [id]: id }),
           {} as Record<number, number>
         ),
-      })
-      await bulkLoansApi.loanReassignment(payload)
+      }
+      await fineract.post('/v1/loans/loanreassignment', payload)
       navigate('/organization')
     } catch (err) {
       console.error('Failed to reassign loans', err)

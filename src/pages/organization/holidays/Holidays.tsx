@@ -12,14 +12,22 @@ import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import {
-  OfficesApi,
-  type GetOfficesResponse,
-  type GetHolidaysResponse,
-  HolidaysApi,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { Plus } from 'lucide-react'
+
+interface Office {
+  id?: number
+  name?: string
+}
+
+interface Holiday {
+  id?: number
+  name?: string
+  fromDate?: number[]
+  toDate?: number[]
+  repaymentsRescheduledTo?: number[]
+  status?: { value?: string }
+}
 
 import {
   Table,
@@ -31,22 +39,19 @@ import {
 } from '@/components/ui/table'
 import { format } from 'date-fns'
 
-const holidayApi = new HolidaysApi(getConfiguration())
-const officesApi = new OfficesApi(getConfiguration())
-
 const Holidays = () => {
   const navigate = useNavigate()
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
   const [selectedOffice, setSelectedOffice] = useState<string>('')
-  const [allHolidays, setAllHolidays] = useState<GetHolidaysResponse[]>([])
+  const [allHolidays, setAllHolidays] = useState<Holiday[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
   // fetch offices on mount
   useEffect(() => {
     const fetchOffices = async () => {
       try {
-        const res = await officesApi.retrieveOffices()
-        setOffices(res.data || [])
+        const { data } = await fineract.get('/v1/offices')
+        setOffices(data || [])
       } catch (err) {
         console.error('Failed to fetch offices', err)
       }
@@ -59,10 +64,10 @@ const Holidays = () => {
     if (selectedOffice) {
       const fetchHolidays = async () => {
         try {
-          const res = await holidayApi.retrieveAllHolidays(
-            Number(selectedOffice)
-          )
-          setAllHolidays(res.data)
+          const { data } = await fineract.get('/v1/holidays', {
+            params: { officeId: Number(selectedOffice) },
+          })
+          setAllHolidays(data)
         } catch (err) {
           console.error('Failed to fetch holidays', err)
         }

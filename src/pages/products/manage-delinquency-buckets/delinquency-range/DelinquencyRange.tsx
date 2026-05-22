@@ -29,17 +29,17 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  DelinquencyRangeAndBucketsManagementApi,
-  type DelinquencyRangeData,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API instance
-const api = new DelinquencyRangeAndBucketsManagementApi(getConfiguration())
+interface DelinquencyRange {
+  id: number
+  classification?: string
+  minimumAgeDays?: number
+  maximumAgeDays?: number
+}
 
 const DelinquencyRange = () => {
-  const [ranges, setRanges] = useState<DelinquencyRangeData[]>([])
+  const [ranges, setRanges] = useState<DelinquencyRange[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -49,8 +49,8 @@ const DelinquencyRange = () => {
     // Fetch delinquency ranges from API
     const fetch = async () => {
       try {
-        const res = await api.getDelinquencyRanges()
-        setRanges(res.data || [])
+        const { data } = await fineract.get('/v1/delinquency/ranges')
+        setRanges(data || [])
       } catch (err) {
         console.error('Failed to fetch delinquency ranges', err)
       }

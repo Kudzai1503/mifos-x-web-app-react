@@ -30,25 +30,21 @@ import {
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { useTranslation } from 'react-i18next'
 
-import { CentersApi, type GetCentersPageItems } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-/**
- * Extended interface to include fields returned by the Fineract API
- * but missing from the OpenAPI-generated GetCentersPageItems type.
- * See: ISSUES.md → Institution Centers → /centers
- */
-interface ExtendedCentersPageItem extends GetCentersPageItems {
-  accountNo?: string
-  externalId?: string
-}
+import fineract from '@/lib/axios'
 
 import { Plus } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 import { Checkbox } from '@/components/ui/checkbox'
 
-const centersApi = new CentersApi(getConfiguration())
+interface CenterItem {
+  id?: number
+  name?: string
+  accountNo?: string
+  externalId?: string
+  officeName?: string
+  status?: { id?: number; code?: string; value?: string }
+}
 
 const Centers = () => {
   const navigate = useNavigate()
@@ -56,7 +52,7 @@ const Centers = () => {
   const { t: tc } = useTranslation('common')
 
   // State for centers data
-  const [centers, setCenters] = useState<ExtendedCentersPageItem[]>([])
+  const [centers, setCenters] = useState<CenterItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   // Search filter state
@@ -72,21 +68,10 @@ const Centers = () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await centersApi.retrieveAll23(
-        undefined, // officeId
-        undefined, // staffId
-        undefined, // externalId
-        undefined, // name
-        undefined, // underHierarchy
-        true, // paged
-        0, // offset
-        10, // limit
-        '', // orderBy
-        '' // sortOrder
-      )
-      const items = Array.from(
-        response.data?.pageItems ?? []
-      ) as ExtendedCentersPageItem[]
+      const { data } = await fineract.get('/v1/centers', {
+        params: { paged: true, offset: 0, limit: 200 },
+      })
+      const items: CenterItem[] = data?.pageItems ?? []
       setCenters(items)
     } catch (err) {
       console.error('Failed to fetch centers', err)

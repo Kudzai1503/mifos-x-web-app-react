@@ -29,21 +29,20 @@ import {
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import {
-  SelfShareProductsApi,
-  type GetProductsTypeProductIdResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const shareApi = new SelfShareProductsApi(getConfiguration())
+interface ShareProduct {
+  id: number
+  name?: string
+  shortName?: string
+  totalShares?: number
+}
 
 const ShareProducts = () => {
   const navigate = useNavigate()
 
   // data
-  const [products, setProducts] = useState<GetProductsTypeProductIdResponse[]>(
-    []
-  )
+  const [products, setProducts] = useState<ShareProduct[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -52,13 +51,8 @@ const ShareProducts = () => {
   useEffect(() => {
     const fetchShareProducts = async () => {
       try {
-        const res = await shareApi.retrieveAllProducts1()
-        const items = res.data
-        setProducts(
-          typeof items !== 'string' && items
-            ? (items as GetProductsTypeProductIdResponse[])
-            : []
-        )
+        const { data } = await fineract.get('/v1/products/share')
+        setProducts(Array.isArray(data) ? data : [])
       } catch (err) {
         console.error('Failed to fetch share products', err)
       }

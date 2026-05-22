@@ -8,6 +8,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import {
   Table,
   TableHeader,
@@ -39,21 +41,20 @@ const fmtDate = (d: unknown) => {
 }
 
 const SharesAccountDividendesTab = () => {
-  const { accountId } = useParams() // get accountId from URL
+  const { sharesAccountId } = useParams() // get sharesAccountId from URL
   const [loading, setLoading] = useState(true)
   const [dividends, setDividends] = useState<Dividend[]>([])
   const [currencyCode, setCurrencyCode] = useState<string>('')
 
   // fetch dividends for this shares account
   useEffect(() => {
-    if (!accountId) return
+    if (!sharesAccountId) return
     ;(async () => {
       try {
-        const res = await fetch(
-          `/api/v1/accounts/share/${accountId}?template=false`
+        const { data } = await fineract.get(
+          `/v1/dividends/share/${sharesAccountId}`
         )
-        const data = await res.json()
-        setDividends(Array.isArray(data?.dividends) ? data.dividends : [])
+        setDividends(Array.isArray(data) ? data : data?.pageItems || [])
         setCurrencyCode(data?.currency?.code || data?.currencyCode || '')
       } catch (e) {
         console.error('Failed to load dividends', e)
@@ -62,7 +63,7 @@ const SharesAccountDividendesTab = () => {
         setLoading(false)
       }
     })()
-  }, [accountId])
+  }, [sharesAccountId])
 
   // helper: format money with currency
   const fmtMoney = (n: unknown) => {

@@ -14,15 +14,13 @@ import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons'
 
-import { ReportsApi, type GetReportsResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const reportsApi = new ReportsApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 const ViewReports = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [report, setReport] = useState<GetReportsResponse>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [report, setReport] = useState<any>()
 
   // Fetch report details
   useEffect(() => {
@@ -30,10 +28,10 @@ const ViewReports = () => {
 
     const fetchReport = async () => {
       try {
-        const response = await reportsApi.retrieveReport(Number(id), {
+        const { data } = await fineract.get(`/v1/reports/${id}`, {
           params: { template: true },
         })
-        setReport(response.data)
+        setReport(data)
       } catch (err) {
         console.error('Failed to fetch report details', err)
       }

@@ -26,8 +26,7 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { ChargesApi, type GetChargesResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircle, faCircleXmark } from '@fortawesome/free-solid-svg-icons'
@@ -35,12 +34,20 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 
-// API instance
-const chargesApi = new ChargesApi(getConfiguration())
+interface Charge {
+  id: number
+  name?: string
+  chargeAppliesTo?: { code?: string }
+  chargeTimeType?: { code?: string }
+  chargeCalculationType?: { code?: string }
+  amount?: number
+  penalty?: boolean
+  active?: boolean
+}
 
 const Charges = () => {
   // State for charges list
-  const [charges, setCharges] = useState<GetChargesResponse[]>([])
+  const [charges, setCharges] = useState<Charge[]>([])
   // Search filter
   const [searchTerm, setSearchTerm] = useState('')
   // Pagination state
@@ -52,8 +59,8 @@ const Charges = () => {
   useEffect(() => {
     const fetchCharges = async () => {
       try {
-        const response = await chargesApi.retrieveAllCharges()
-        setCharges(response.data || [])
+        const { data } = await fineract.get('/v1/charges')
+        setCharges(data || [])
       } catch (err) {
         console.error('Failed to fetch charges', err)
       }

@@ -29,15 +29,19 @@ import { Button } from '@/components/ui/button'
 import { Plus, CheckCircle2 } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { FloatingRatesApi, type GetFloatingRatesResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API instance for floating rates
-const floatingRateApi = new FloatingRatesApi(getConfiguration())
+interface FloatingRate {
+  id: number
+  name?: string
+  createdBy?: string
+  isBaseLendingRate?: boolean
+  isActive?: boolean
+}
 
 const FloatingRates = () => {
   // Component state
-  const [rates, setRates] = useState<GetFloatingRatesResponse[]>([])
+  const [rates, setRates] = useState<FloatingRate[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -47,8 +51,8 @@ const FloatingRates = () => {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const res = await floatingRateApi.retrieveAll22() // API call
-        setRates(res.data || [])
+        const { data } = await fineract.get('/v1/floatingrates')
+        setRates(data || [])
       } catch (err) {
         console.error('Failed to fetch floating rates', err)
       }

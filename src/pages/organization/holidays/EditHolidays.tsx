@@ -12,22 +12,19 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
+import fineract from '@/lib/axios'
 
-import {
-  HolidaysApi,
-  type GetHolidaysResponse,
-  type PutHolidaysHolidayIdRequest,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const holidaysApi = new HolidaysApi(getConfiguration())
+interface Holiday {
+  name?: string
+  description?: string
+}
 
 const EditHolidays = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const holidayId = Number(id)
 
-  const [holiday, setHoliday] = useState<GetHolidaysResponse>()
+  const [holiday, setHoliday] = useState<Holiday>()
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -38,15 +35,14 @@ const EditHolidays = () => {
   useEffect(() => {
     const fetchHolidayData = async () => {
       try {
-        const res = await holidaysApi.retrieveOne7(holidayId)
-        const holidayData = res.data
+        const { data: holidayData } = await fineract.get(
+          `/v1/holidays/${holidayId}`
+        )
 
         setHoliday(holidayData)
         setFormData({
           name: holidayData.name ?? '',
-          description:
-            (holidayData as GetHolidaysResponse & { description?: string })
-              .description ?? '',
+          description: holidayData.description ?? '',
         })
       } catch (err) {
         console.error('Failed to fetch holiday', err)
@@ -73,14 +69,14 @@ const EditHolidays = () => {
       return
     }
 
-    const payload: PutHolidaysHolidayIdRequest = {
+    const payload = {
       name: formData.name.trim(),
       description: formData.description.trim(),
     }
 
     try {
       setIsSubmitting(true)
-      await holidaysApi.update6(holidayId, payload)
+      await fineract.put(`/v1/holidays/${holidayId}`, payload)
       alert('Holiday updated successfully!')
       navigate(`/organization/holidays/${holidayId}`)
     } catch (err) {

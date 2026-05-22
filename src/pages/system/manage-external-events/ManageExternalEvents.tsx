@@ -26,18 +26,15 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Switch } from '@/components/ui/switch'
-import {
-  ExternalEventConfigurationApi,
-  type ExternalEventConfigurationItemData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const externalEventsApi = new ExternalEventConfigurationApi(getConfiguration())
+interface ExternalEventItem {
+  type?: string
+  enabled?: boolean
+}
 
 const ManageExternalEvents = () => {
-  const [externalEvents, setExternalEvents] = useState<
-    ExternalEventConfigurationItemData[]
-  >([])
+  const [externalEvents, setExternalEvents] = useState<ExternalEventItem[]>([])
   const [baseline, setBaseline] = useState<Record<string, boolean>>({})
 
   const [filter, setFilter] = useState('')
@@ -48,8 +45,8 @@ const ManageExternalEvents = () => {
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const res = await externalEventsApi.retrieveExternalEventConfiguration()
-        const list = res.data.externalEventConfiguration ?? []
+        const { data } = await fineract.get('/v1/externalevents/configuration')
+        const list = data.externalEventConfiguration ?? []
         setExternalEvents(list)
 
         const map: Record<string, boolean> = {}

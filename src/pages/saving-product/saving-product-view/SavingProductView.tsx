@@ -12,18 +12,30 @@ import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import Dropdown from '@/components/custom/navbar/Dropdown'
 import AppTabs from '@/components/custom/tabs/AppTabs'
 
-import {
-  SavingsAccountApi,
-  type SavingsAccountData,
-  type SavingsAccountStatusEnumData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { faCircle, faMoneyBill } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Menu } from 'lucide-react'
 
-const savingsApi = new SavingsAccountApi(getConfiguration())
+interface SavingsAccountStatusEnumData {
+  pendingApproval?: boolean
+  submittedAndPendingApproval?: boolean
+  approved?: boolean
+  active?: boolean
+  rejected?: boolean
+  value?: string
+}
+
+interface SavingsAccountData {
+  id?: number
+  accountNo?: string
+  savingsProductName?: string
+  clientName?: string
+  groupName?: string
+  status?: SavingsAccountStatusEnumData
+  summary?: { accountBalance?: number; availableBalance?: number }
+}
 
 // Define a reusable menu item type
 type MenuItem = {
@@ -133,13 +145,11 @@ const SavingsAccountView = () => {
     if (!accountId) return
     ;(async () => {
       try {
-        const res = await savingsApi.retrieveOne25(
-          Number(accountId),
-          undefined,
-          undefined,
-          'all'
+        const { data } = await fineract.get<SavingsAccountData>(
+          `/v1/savingsaccounts/${accountId}`,
+          { params: { associations: 'all' } }
         )
-        setAcct(res.data)
+        setAcct(data)
       } catch (err) {
         console.error('Failed to fetch savings account', err)
       }

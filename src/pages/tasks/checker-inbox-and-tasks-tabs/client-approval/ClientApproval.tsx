@@ -18,11 +18,15 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useNavigate } from 'react-router-dom'
-import { BatchAPIApi, ClientApi, type ClientData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const clientsApi = new ClientApi(getConfiguration())
-const batchApi = new BatchAPIApi(getConfiguration())
+interface ClientData {
+  id?: number
+  displayName?: string
+  accountNo?: string
+  staffName?: string
+  officeName?: string
+}
 
 const ClientApproval = () => {
   const navigate = useNavigate()
@@ -36,18 +40,10 @@ const ClientApproval = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await clientsApi.retrieveAll21(
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          'PENDING',
-          undefined,
-          undefined,
-          1000
-        )
-        const pageItems = res.data.pageItems ?? []
+        const { data } = await fineract.get('/v1/clients', {
+          params: { status: 'PENDING', limit: 1000 },
+        })
+        const pageItems: ClientData[] = data?.pageItems ?? []
 
         const grouped = pageItems.reduce(
           (acc: Record<string, ClientData[]>, client) => {
@@ -113,7 +109,9 @@ const ClientApproval = () => {
     }))
 
     try {
-      await batchApi.handleBatchRequests(batchPayload, true)
+      await fineract.post('/v1/batches', batchPayload, {
+        params: { enclosingTransaction: true },
+      })
       alert('Selected clients approved successfully.')
       setSelected([]) // Clear the selection
     } catch (error) {

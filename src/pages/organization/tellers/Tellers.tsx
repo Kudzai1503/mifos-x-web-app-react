@@ -28,21 +28,22 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
+import fineract from '@/lib/axios'
 
-import {
-  TellerCashManagementApi,
-  type GetTellersResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+interface Teller {
+  id?: number
+  name?: string
+  officeName?: string
+  status?: string
+  startDate?: string | number[]
+}
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircle, faEye } from '@fortawesome/free-solid-svg-icons'
 import { Plus } from 'lucide-react'
 
-const tellersApi = new TellerCashManagementApi(getConfiguration())
-
 const Tellers = () => {
-  const [tellers, setTellers] = useState<GetTellersResponse[]>([])
+  const [tellers, setTellers] = useState<Teller[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -52,8 +53,8 @@ const Tellers = () => {
   useEffect(() => {
     const fetchTellers = async () => {
       try {
-        const res = await tellersApi.getTellerData()
-        setTellers(res.data || [])
+        const { data } = await fineract.get('/v1/tellers')
+        setTellers(data || [])
       } catch (err) {
         console.error('Failed to fetch tellers', err)
       }

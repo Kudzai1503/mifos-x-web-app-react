@@ -16,26 +16,29 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  HolidaysApi,
-  OfficesApi,
-  type GetOfficesResponse,
-  type PostHolidaysRequest,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
+
+interface Office {
+  id?: number
+  name?: string
+}
 
 // repayment scheduling options
 const REPAYMENT_TYPES = [
   { id: 'RESCHEDULE_TO_NEXT_REPAYMENT', name: 'Reschedule to Next Repayment' },
 ]
 
-const officesApi = new OfficesApi(getConfiguration())
-const holidaysApi = new HolidaysApi(getConfiguration())
-
 const HOLIDAY_DATE_FORMAT = 'dd MMMM yyyy'
 
-type HolidayCreateRequest = PostHolidaysRequest & {
+type HolidayCreateRequest = {
+  name: string
+  description: string
+  fromDate: string
+  toDate: string
   reschedulingType: number
+  offices: { officeId: number }[]
+  locale: string
+  dateFormat: string
 }
 
 const HOLIDAY_RESCHEDULING_TYPES = {
@@ -87,15 +90,15 @@ const getHolidayErrorMessage = (error: unknown) => {
 
 const ManageHolidays = () => {
   const navigate = useNavigate()
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // fetch offices
   useEffect(() => {
     const fetchOffice = async () => {
       try {
-        const res = await officesApi.retrieveOffices()
-        setOffices(res.data)
+        const { data } = await fineract.get('/v1/offices')
+        setOffices(data)
       } catch (err) {
         console.error('Failed to fetch office', err)
       }
@@ -153,7 +156,7 @@ const ManageHolidays = () => {
 
     try {
       setIsSubmitting(true)
-      await holidaysApi.createNewHoliday(payload)
+      await fineract.post('/v1/holidays', payload)
       alert('Holiday created successfully!')
       navigate('/organization/holidays')
     } catch (err) {

@@ -5,18 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-import type { GetGroupsGroupIdResponse } from '@/fineract-api'
 
 /**
- * The generated `GetGroupsGroupIdResponse` is incomplete — the real API
- * returns extra fields when `associations=all` is requested. This interface
- * extends the generated type with those additional runtime fields so that
- * downstream code can access them without double-casting through `unknown`.
+ * Minimal inline interface for a group response.
+ * The Fineract API returns additional runtime fields when
+ * `associations=all` is requested.
  */
-export interface ExtendedGroupResponse extends Omit<
-  GetGroupsGroupIdResponse,
-  'timeline'
-> {
+export interface ExtendedGroupResponse {
+  id?: number
+  name?: string
+  externalId?: string
+  officeName?: string
+  officeId?: number
   active?: boolean
   staffId?: number
   staffName?: string

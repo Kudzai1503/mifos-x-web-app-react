@@ -23,12 +23,7 @@ import {
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import {
-  GeneralLedgerAccountApi,
-  type GetGLAccountsResponse,
-  type PutGLAccountsRequest,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { Plus } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -39,21 +34,30 @@ import {
   faTrash,
 } from '@fortawesome/free-solid-svg-icons'
 
-//gl accounts base api
-const glApi = new GeneralLedgerAccountApi(getConfiguration())
+interface GlAccount {
+  id?: number
+  name?: string
+  glCode?: string
+  type?: { id?: number; value?: string }
+  disabled?: boolean
+  manualEntriesAllowed?: boolean
+  usage?: { value?: string }
+  parentId?: number
+  description?: string
+}
 
 const ViewGlAccounts = () => {
   const navigate = useNavigate()
   const { id } = useParams()
   //store the gl account detials
-  const [account, setAccount] = useState<GetGLAccountsResponse>()
+  const [account, setAccount] = useState<GlAccount>()
 
   //api call for GL account
   useEffect(() => {
     const fetchViewGlAccounts = async () => {
       try {
-        const response = await glApi.retreiveAccount(Number(id))
-        setAccount(response.data)
+        const { data } = await fineract.get(`/v1/glaccounts/${id}`)
+        setAccount(data)
       } catch (err) {
         console.error('Failed to get Gl Account Details', err)
       }
@@ -66,7 +70,7 @@ const ViewGlAccounts = () => {
   //Function to delete the gl account
   const handleDelete = async () => {
     try {
-      await glApi.deleteGLAccount1(Number(id))
+      await fineract.delete(`/v1/glaccounts/${id}`)
       navigate('/accounting/chart-of-accounts')
     } catch (err) {
       console.error('Failed to delete Gl account', err)
@@ -76,10 +80,9 @@ const ViewGlAccounts = () => {
   //Funtion the disable/enable the gl account
   const handleDisable = async () => {
     try {
-      const updated: PutGLAccountsRequest = {
+      await fineract.put(`/v1/glaccounts/${id}`, {
         disabled: !account.disabled,
-      }
-      await glApi.updateGLAccount1(Number(id), updated)
+      })
       setAccount(prev => ({ ...prev!, disabled: !prev?.disabled }))
     } catch (err) {
       console.error('Failed to update disable state', err)

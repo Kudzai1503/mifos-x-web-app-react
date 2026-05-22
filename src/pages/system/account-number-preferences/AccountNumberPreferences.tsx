@@ -29,22 +29,19 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  AccountNumberFormatApi,
-  type GetAccountNumberFormatsIdResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API client for Account Number Preferences
-const preferencesApi = new AccountNumberFormatApi(getConfiguration())
+interface AccountNumberPreference {
+  id?: number
+  accountType?: { id?: number; value?: string }
+  prefixType?: { value?: string }
+}
 
 const AccountNumberPreferences = () => {
   const navigate = useNavigate()
 
   // State for preferences data
-  const [preferences, setPreferences] = useState<
-    GetAccountNumberFormatsIdResponse[]
-  >([])
+  const [preferences, setPreferences] = useState<AccountNumberPreference[]>([])
   // State for search input
   const [searchTerm, setSearchTerm] = useState('')
   // Pagination states
@@ -55,8 +52,8 @@ const AccountNumberPreferences = () => {
   useEffect(() => {
     const fetchPreferences = async () => {
       try {
-        const response = await preferencesApi.retrieveAll3()
-        setPreferences(response.data || [])
+        const { data } = await fineract.get('/v1/accountnumberformats')
+        setPreferences(data || [])
       } catch (err) {
         console.error('Failed to fetch account number preferences', err)
       }

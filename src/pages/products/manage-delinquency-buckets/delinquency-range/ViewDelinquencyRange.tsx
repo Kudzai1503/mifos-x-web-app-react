@@ -21,29 +21,21 @@ import {
 import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  DelinquencyRangeAndBucketsManagementApi,
-  type DelinquencyRangeData,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-// API instance for delinquency ranges
-const delinquencyApi = new DelinquencyRangeAndBucketsManagementApi(
-  getConfiguration()
-)
-
 const ViewDelinquencyRange = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [range, setRange] = useState<DelinquencyRangeData>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [range, setRange] = useState<any>()
 
   // Delete handler
   const handleDelete = async () => {
     try {
-      await delinquencyApi.deleteDelinquencyRange(Number(id))
+      await fineract.delete(`/v1/delinquency/ranges/${id}`)
       navigate('/products/delinquency-bucket-configurations/ranges')
     } catch (err) {
       console.error('Failed to delete delinquency range', err)
@@ -54,8 +46,8 @@ const ViewDelinquencyRange = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await delinquencyApi.getDelinquencyRange(Number(id))
-        setRange(res.data)
+        const { data } = await fineract.get(`/v1/delinquency/ranges/${id}`)
+        setRange(data)
       } catch (err) {
         console.error('Failed to fetch delinquency range', err)
       }

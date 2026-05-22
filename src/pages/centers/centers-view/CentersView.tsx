@@ -10,21 +10,7 @@ import { Outlet, useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 
-import { CentersApi, type GetCentersCenterIdResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-/**
- * Extended interface to include fields returned by the Fineract API
- * but missing from the OpenAPI-generated GetCentersCenterIdResponse type.
- * See: ISSUES.md → Institution Centers → /centers/{id}/general
- */
-interface ExtendedCenterResponse extends GetCentersCenterIdResponse {
-  accountNo?: string
-  externalId?: string
-  activationDate?: number[]
-  collectionMeetingCalendar?: unknown
-  staffId?: number
-}
+import fineract from '@/lib/axios'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Building2, Menu } from 'lucide-react'
 import AppTabs from '@/components/custom/tabs/AppTabs'
@@ -32,8 +18,17 @@ import Dropdown from '@/components/custom/navbar/Dropdown'
 import { useTranslation } from 'react-i18next'
 import { formatDate } from '@/lib/date-utils'
 
-// API instance
-const centersApi = new CentersApi(getConfiguration())
+interface CenterResponse {
+  id?: number
+  name?: string
+  officeName?: string
+  accountNo?: string
+  externalId?: string
+  activationDate?: number[]
+  collectionMeetingCalendar?: unknown
+  staffId?: number
+  status?: { code?: string; value?: string }
+}
 
 // Permission checker (stub — replace with real implementation later)
 const can = (_perm: string) => true
@@ -45,15 +40,15 @@ const CentersView = () => {
   const { t: tc } = useTranslation('common')
 
   // State to hold center details
-  const [center, setCenter] = useState<ExtendedCenterResponse>()
+  const [center, setCenter] = useState<CenterResponse>()
   const [fetchError, setFetchError] = useState(false)
 
   // Fetch center details on mount
   useEffect(() => {
     const fetchCenter = async () => {
       try {
-        const res = await centersApi.retrieveOne14(Number(id))
-        setCenter(res.data as ExtendedCenterResponse)
+        const { data } = await fineract.get(`/v1/centers/${id}`)
+        setCenter(data as CenterResponse)
       } catch (err) {
         console.error('Failed to fetch center', err)
         setFetchError(true)
@@ -65,7 +60,7 @@ const CentersView = () => {
   // Handle delete action
   const handleDelete = async () => {
     try {
-      await centersApi.delete10(Number(id))
+      await fineract.delete(`/v1/centers/${id}`)
       navigate('/centers')
     } catch (err) {
       console.error('Failed to delete center', err)

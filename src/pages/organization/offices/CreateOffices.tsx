@@ -12,15 +12,17 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { OfficesApi, type GetOfficesResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-const officesApi = new OfficesApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+}
 
 const CreateOffices = () => {
   const navigate = useNavigate()
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
 
   // form state
   const [formData, setFormData] = useState({
@@ -44,8 +46,8 @@ const CreateOffices = () => {
   useEffect(() => {
     const fetchOffices = async () => {
       try {
-        const response = await officesApi.retrieveOffices()
-        setOffices(response.data || [])
+        const { data } = await fineract.get('/v1/offices')
+        setOffices(data || [])
       } catch (err) {
         console.error('Failed to fetch offices', err)
       }
@@ -66,7 +68,7 @@ const CreateOffices = () => {
     }
 
     try {
-      await officesApi.createOffice({
+      await fineract.post('/v1/offices', {
         name: formData.officeName,
         parentId: Number(formData.parentOffice),
         openingDate: formattedDate,

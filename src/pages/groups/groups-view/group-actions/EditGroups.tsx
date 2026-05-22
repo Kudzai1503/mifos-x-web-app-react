@@ -14,13 +14,19 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 
-import { GroupsApi } from '@/fineract-api'
-import type { ExtendedGroupResponse } from '@/pages/groups/types'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { dateArrayToInputValue, inputToFineractDate } from '@/lib/date-utils'
 import { useTranslation } from 'react-i18next'
 
-const groupsApi = new GroupsApi(getConfiguration())
+interface GroupData {
+  id?: number
+  name?: string
+  staffId?: number
+  staffName?: string
+  staff?: { displayName?: string }
+  timeline?: { submittedOnDate?: number[]; activatedOnDate?: number[] }
+  staffOptions?: { id?: number; displayName?: string; name?: string }[]
+}
 
 const EditGroups = () => {
   const navigate = useNavigate()
@@ -29,7 +35,7 @@ const EditGroups = () => {
   const { t: tc } = useTranslation('common')
 
   // Local state for group + form fields
-  const [group, setGroup] = useState<ExtendedGroupResponse>()
+  const [group, setGroup] = useState<GroupData>()
   const [name, setName] = useState('')
   const [staffId, setStaffId] = useState<string>('')
   const [submittedOn, setSubmittedOn] = useState<string>('')
@@ -42,8 +48,8 @@ const EditGroups = () => {
     ;(async () => {
       if (!id) return
       try {
-        const res = await groupsApi.retrieveOne15(Number(id))
-        const groupData = res.data as ExtendedGroupResponse
+        const { data } = await fineract.get(`/v1/groups/${id}`)
+        const groupData = data as GroupData
         setGroup(groupData)
 
         setName(groupData?.name ?? '')
@@ -91,7 +97,7 @@ const EditGroups = () => {
       if (act) payload.activationDate = act
       if (externalId.trim()) payload.externalId = externalId.trim()
 
-      await groupsApi.update13(Number(id), { name: payload.name as string })
+      await fineract.put(`/v1/groups/${id}`, payload)
       navigate(`/groups/${id}/general`)
     } catch (err) {
       console.error('Failed to update group', err)

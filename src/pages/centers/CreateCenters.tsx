@@ -16,19 +16,17 @@ import AppSelect from '@/components/custom/select/AppSelect'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { useTranslation } from 'react-i18next'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  CentersApi,
-  OfficesApi,
-  StaffApi,
-  type GetOfficesResponse,
-  type StaffData,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API instances
-const centersApi = new CentersApi(getConfiguration())
-const officesApi = new OfficesApi(getConfiguration())
-const staffApi = new StaffApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+}
+
+interface StaffItem {
+  id?: number
+  displayName?: string
+}
 
 const CreateCenters = () => {
   const navigate = useNavigate()
@@ -36,8 +34,8 @@ const CreateCenters = () => {
   const { t: tc } = useTranslation('common')
 
   // Dropdown data
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
-  const [staff, setStaff] = useState<StaffData[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
+  const [staff, setStaff] = useState<StaffItem[]>([])
 
   // Form state
   const [formData, setFormData] = useState({
@@ -50,18 +48,16 @@ const CreateCenters = () => {
     activationDate: '',
   })
 
-  // Fetch offices + staff on mount
+  // Fetch template (offices + staff) on mount
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const [officesRes, staffRes] = await Promise.all([
-          officesApi.retrieveOffices(),
-          staffApi.retrieveAll16(),
+          fineract.get('/v1/offices'),
+          fineract.get('/v1/staff'),
         ])
-        const officeItems = Array.from(officesRes.data ?? [])
-        const staffItems = Array.from(staffRes.data ?? [])
-        setOffices(officeItems)
-        setStaff(staffItems)
+        setOffices(officesRes.data ?? [])
+        setStaff(staffRes.data ?? [])
       } catch (err) {
         console.error('Failed to fetch offices/staff', err)
       }
@@ -74,10 +70,12 @@ const CreateCenters = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await centersApi.create7({
+      await fineract.post('/v1/centers', {
         ...formData,
         officeId: Number(formData.officeId),
         active: formData.active,
+        dateFormat: 'yyyy-MM-dd',
+        locale: 'en',
       })
       navigate('/centers')
     } catch (err) {

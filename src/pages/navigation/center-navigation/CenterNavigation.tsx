@@ -9,15 +9,7 @@ import { useEffect, useState } from 'react'
 import fineract from '@/lib/axios'
 import { faBuilding, faCircle } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { getConfiguration } from '@/lib/fineract-openapi'
 import { useTranslation } from 'react-i18next'
-import {
-  CentersApi,
-  type CenterData,
-  type GetCentersCenterIdResponse,
-  type GetCentersTemplateResponse,
-  type GetOfficesResponse,
-} from '@/fineract-api'
 
 interface CenterSummaryDetails {
   activeClients: number
@@ -31,6 +23,16 @@ interface CenterProps {
   centerId: number
 }
 
+interface CenterDetail {
+  id?: number
+  name?: string
+  accountNo?: string
+  externalId?: string
+  staffName?: string
+  activationDate?: string
+  status?: { code?: string; description?: string }
+}
+
 //For data conversion
 const formatDate = (date: string, locale: string) =>
   new Intl.DateTimeFormat(locale, {
@@ -39,35 +41,24 @@ const formatDate = (date: string, locale: string) =>
     year: 'numeric',
   }).format(new Date(date))
 
-const centerApi = new CentersApi(getConfiguration())
-
 const CenterNavigation = ({ centerId }: CenterProps) => {
   //states to keep a record of the previous selections
-  const [centerDetails, setCenterDetails] = useState<CenterData | null>(null)
-  const [centerStatus, setCenterStatus] =
-    useState<GetCentersCenterIdResponse | null>(null)
-  const [template, setTemplate] = useState<GetCentersTemplateResponse | null>(
-    null
-  )
+  const [centerDetails, setCenterDetails] = useState<CenterDetail | null>(null)
   const [centerSummary, setCenterSummary] =
     useState<CenterSummaryDetails | null>(null)
-  const [office, setOffice] = useState<GetOfficesResponse | null>(null)
   const { t, i18n } = useTranslation('common')
 
   useEffect(() => {
     const fetchCenterData = async () => {
       try {
         const [detailRes, summaryRes] = await Promise.all([
-          centerApi.retrieveOne14(centerId),
-          fineract.get('/runreports/GroupSummaryCounts', {
+          fineract.get<CenterDetail>(`/v1/centers/${centerId}`),
+          fineract.get('/v1/runreports/GroupSummaryCounts', {
             params: { R_groupId: centerId, genericResultSet: false },
           }),
         ])
 
         setCenterDetails(detailRes.data)
-        setCenterStatus(detailRes.data)
-        setTemplate(detailRes.data)
-        setOffice(detailRes.data)
         if (Array.isArray(summaryRes.data) && summaryRes.data.length > 0) {
           setCenterSummary(summaryRes.data[0])
         } else {
@@ -100,21 +91,21 @@ const CenterNavigation = ({ centerId }: CenterProps) => {
             <FontAwesomeIcon
               icon={faCircle}
               className={
-                centerStatus?.status?.code === 'groupingStatusType.active'
+                centerDetails.status?.code === 'groupingStatusType.active'
                   ? 'text-green-500'
                   : 'text-gray-400'
               }
-              title={centerStatus?.status?.description}
+              title={centerDetails.status?.description}
             />
           </h2>
           <p className="text-gray-500">
             {t('fields.accountNo')}:{' '}
             <span className="font-medium">{centerDetails.accountNo}</span>
           </p>
-          {office?.externalId && (
+          {centerDetails.externalId && (
             <p className="text-gray-500">
               {t('fields.externalId')}:{' '}
-              <span className="font-medium">{office?.externalId}</span>
+              <span className="font-medium">{centerDetails.externalId}</span>
             </p>
           )}
         </div>
@@ -123,7 +114,9 @@ const CenterNavigation = ({ centerId }: CenterProps) => {
       {/* Details */}
       <div className="grid grid-cols-2 gap-y-3">
         <div className="font-medium">{t('navigation.activationDate')}:</div>
-        <div>{formatDate(template?.activationDate ?? '', i18n.language)}</div>
+        <div>
+          {formatDate(centerDetails.activationDate ?? '', i18n.language)}
+        </div>
 
         <div className="font-medium">{t('navigation.associatedOfficer')}:</div>
         <div>{centerDetails.staffName || t('actions.na')}</div>

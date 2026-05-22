@@ -29,15 +29,17 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { DataTablesApi, type GetDataTablesResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-const dataTablesApi = new DataTablesApi(getConfiguration())
+interface DataTable {
+  registeredTableName?: string
+  applicationTableName?: string
+}
 
 const ManageDataTables = () => {
   const navigate = useNavigate()
 
-  const [dataTables, setDataTables] = useState<GetDataTablesResponse[]>([])
+  const [dataTables, setDataTables] = useState<DataTable[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -46,8 +48,8 @@ const ManageDataTables = () => {
   useEffect(() => {
     const fetchDataTables = async () => {
       try {
-        const response = await dataTablesApi.getDatatables()
-        setDataTables(response.data || [])
+        const { data } = await fineract.get('/v1/datatables')
+        setDataTables(data || [])
       } catch (err) {
         console.error('Failed to fetch data tables', err)
       }

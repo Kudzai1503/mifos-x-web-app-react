@@ -15,44 +15,46 @@ import { Input } from '@/components/ui/input'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import {
-  AccountingRulesApi,
-  CurrencyApi,
-  JournalEntriesApi,
-  OfficesApi,
-  PaymentTypeApi,
-  type AccountingRuleData,
-  type CurrencyData,
-  type GLAccountDataForLookup,
-  type GetOfficesResponse,
-  type GetPaymentTypeData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-// Api calls for the dropdowns
-const officeApi = new OfficesApi(getConfiguration())
-const currencyApi = new CurrencyApi(getConfiguration())
-const paymentApi = new PaymentTypeApi(getConfiguration())
-const accRuleApi = new AccountingRulesApi(getConfiguration())
-const journalEntryApi = new JournalEntriesApi(getConfiguration())
+interface OfficeItem {
+  id?: number
+  name?: string
+}
+interface CurrencyItem {
+  code?: string
+  displayLabel?: string
+}
+interface PaymentTypeItem {
+  id?: number
+  name?: string
+}
+interface GlAccountLookup {
+  id?: number
+  name?: string
+}
+interface AccountingRule {
+  id?: number
+  name?: string
+  debitAccounts?: GlAccountLookup[]
+  creditAccounts?: GlAccountLookup[]
+}
 
 const FrequentPostings = () => {
   const navigate = useNavigate()
 
   // states to store the data
-  const [offices, setOffices] = useState<GetOfficesResponse[] | null>(null)
-  const [currencies, setCurrencies] = useState<CurrencyData[] | null>(null)
-  const [paymentTypes, setPaymentTypes] = useState<GetPaymentTypeData[] | null>(
+  const [offices, setOffices] = useState<OfficeItem[] | null>(null)
+  const [currencies, setCurrencies] = useState<CurrencyItem[] | null>(null)
+  const [paymentTypes, setPaymentTypes] = useState<PaymentTypeItem[] | null>(
     null
   )
 
   const [accountingRules, setAccountingRules] = useState<
-    AccountingRuleData[] | null
+    AccountingRule[] | null
   >(null)
 
-  const [selectedRule, setSelectedRule] = useState<AccountingRuleData | null>(
-    null
-  )
+  const [selectedRule, setSelectedRule] = useState<AccountingRule | null>(null)
   const [debitAmount, setDebitAmount] = useState('')
   const [creditAmount, setCreditAmount] = useState('')
   const [selectedDebitAccount, setSelectedDebitAccount] = useState('')
@@ -80,10 +82,10 @@ const FrequentPostings = () => {
       try {
         const [officesRes, currenciesRes, paymentTypesRes, accountingRulesRes] =
           await Promise.all([
-            officeApi.retrieveOffices(),
-            currencyApi.retrieveCurrencies(),
-            paymentApi.getAllPaymentTypes(),
-            accRuleApi.retrieveAllAccountingRules(),
+            fineract.get('/v1/offices'),
+            fineract.get('/v1/currencies'),
+            fineract.get('/v1/paymenttypes'),
+            fineract.get('/v1/accountingrules'),
           ])
         setOffices(officesRes.data)
         setCurrencies(currenciesRes.data.selectedCurrencyOptions ?? [])
@@ -152,7 +154,7 @@ const FrequentPostings = () => {
     }
 
     try {
-      await journalEntryApi.createGLJournalEntry(formData.office, payload)
+      await fineract.post('/v1/journalentries', payload)
       alert('Frequnet postings entry created successfully!')
     } catch (err) {
       console.error('Failed to create frequnet postings', err)
@@ -229,10 +231,9 @@ const FrequentPostings = () => {
                   selectPlaceholder="Select Debit Account"
                   selectOptions={(selectedRule.debitAccounts || [])
                     .filter(
-                      (option: GLAccountDataForLookup) =>
-                        option.id !== undefined
+                      (option: GlAccountLookup) => option.id !== undefined
                     )
-                    .map((option: GLAccountDataForLookup) => ({
+                    .map((option: GlAccountLookup) => ({
                       id: option.id!,
                       name: option.name!,
                     }))}
@@ -257,10 +258,9 @@ const FrequentPostings = () => {
                   selectPlaceholder="Select Credit Account"
                   selectOptions={(selectedRule.creditAccounts || [])
                     .filter(
-                      (option: GLAccountDataForLookup) =>
-                        option.id !== undefined
+                      (option: GlAccountLookup) => option.id !== undefined
                     )
-                    .map((option: GLAccountDataForLookup) => ({
+                    .map((option: GlAccountLookup) => ({
                       id: option.id!,
                       name: option.name!,
                     }))}

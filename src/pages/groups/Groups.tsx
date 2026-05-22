@@ -28,26 +28,22 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { GroupsApi, type GetGroupsPageItems } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useTranslation } from 'react-i18next'
-
-/**
- * Extended interface to include fields returned by the Fineract API
- * but missing from the OpenAPI-generated GetGroupsPageItems type.
- * See: ISSUES.md → Institution Groups → /groups
- */
-interface ExtendedGroupsPageItem extends GetGroupsPageItems {
-  accountNo?: string
-  externalId?: string
-}
 
 import { Plus } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 import { Checkbox } from '@/components/ui/checkbox'
 
-const groupsApi = new GroupsApi(getConfiguration())
+interface ExtendedGroupsPageItem {
+  id?: number
+  name?: string
+  accountNo?: string
+  externalId?: string
+  officeName?: string
+  status?: { id?: number; value?: string }
+}
 
 const Groups = () => {
   const navigate = useNavigate()
@@ -71,21 +67,10 @@ const Groups = () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await groupsApi.retrieveAll24(
-        undefined, // officeId
-        undefined, // staffId
-        undefined, // externalId
-        undefined, // name
-        undefined, // underHierarchy
-        true, // paged
-        0, // offset
-        100, // limit
-        '', // orderBy
-        '' // sortOrder
-      )
-      const items = Array.from(
-        response.data?.pageItems ?? []
-      ) as ExtendedGroupsPageItem[]
+      const response = await fineract.get<{
+        pageItems?: ExtendedGroupsPageItem[]
+      }>('/v1/groups', { params: { paged: true, offset: 0, limit: 100 } })
+      const items = response.data?.pageItems ?? []
       setGroups(items)
     } catch (err) {
       console.error('Failed to fetch groups', err)

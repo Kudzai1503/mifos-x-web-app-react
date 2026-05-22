@@ -12,13 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { DelinquencyRangeAndBucketsManagementApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-// API instance for delinquency ranges
-const delinquencyApi = new DelinquencyRangeAndBucketsManagementApi(
-  getConfiguration()
-)
+import fineract from '@/lib/axios'
 
 const EditDelinquencyRange = () => {
   const { id } = useParams()
@@ -35,11 +29,11 @@ const EditDelinquencyRange = () => {
     // Fetch existing delinquency range details for pre-filling form
     const fetchData = async () => {
       try {
-        const res = await delinquencyApi.getDelinquencyRange(Number(id))
+        const { data } = await fineract.get(`/v1/delinquency/ranges/${id}`)
         setFormData({
-          classification: res.data.classification ?? '',
-          daysFrom: String(res.data.minimumAgeDays ?? ''),
-          daysTo: String(res.data.maximumAgeDays ?? ''),
+          classification: data.classification ?? '',
+          daysFrom: String(data.minimumAgeDays ?? ''),
+          daysTo: String(data.maximumAgeDays ?? ''),
         })
       } catch (err) {
         console.error('Failed to fetch delinquency range', err)
@@ -61,7 +55,7 @@ const EditDelinquencyRange = () => {
 
     try {
       // Update delinquency range using API
-      await delinquencyApi.updateDelinquencyRange(Number(id), {
+      await fineract.put(`/v1/delinquency/ranges/${id}`, {
         classification: formData.classification,
         minimumAgeDays: Number(formData.daysFrom),
         maximumAgeDays: Number(formData.daysTo),

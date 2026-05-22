@@ -23,19 +23,16 @@ import {
 } from '@/components/ui/chart'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import {
-  OfficesApi,
-  RunReportsApi,
-  type GetOfficesResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { format, subDays, subWeeks, subMonths } from 'date-fns'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { useTranslation } from 'react-i18next'
 
-const officeApi = new OfficesApi(getConfiguration())
-const runReportApi = new RunReportsApi(getConfiguration())
+interface OfficeOption {
+  id: number
+  name: string
+}
 
 //generates labels for the client trends graph
 const generateLabels = (scale: string): string[] => {
@@ -57,7 +54,7 @@ const generateLabels = (scale: string): string[] => {
 const ClientTrendsLine = () => {
   //state for storing the data
   const [officeId, setOfficeId] = useState<number>(1)
-  const [officeData, setOfficeData] = useState<GetOfficesResponse[]>()
+  const [officeData, setOfficeData] = useState<OfficeOption[]>()
   const [timescale, setTimescale] = useState('Day')
   const [chartData, setChartData] = useState<
     { label: string; onboarded: number; loaned: number }[]
@@ -78,7 +75,7 @@ const ClientTrendsLine = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await officeApi.retrieveOffices()
+        const res = await fineract.get<OfficeOption[]>('/v1/offices')
         const data = res.data ?? []
         setOfficeData(
           data.map(option => ({ id: option.id!, name: option.name! }))
@@ -94,10 +91,10 @@ const ClientTrendsLine = () => {
     ;(async () => {
       try {
         const [clientRes, loanRes] = await Promise.all([
-          runReportApi.runReport(`ClientTrendsBy${timescale}`, false, {
+          fineract.get(`/v1/runreports/ClientTrendsBy${timescale}`, {
             params: { R_officeId: officeId, genericResultSet: false },
           }),
-          runReportApi.runReport(`LoanTrendsBy${timescale}`, false, {
+          fineract.get(`/v1/runreports/LoanTrendsBy${timescale}`, {
             params: { R_officeId: officeId, genericResultSet: false },
           }),
         ])

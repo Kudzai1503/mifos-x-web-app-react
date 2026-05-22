@@ -8,13 +8,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-import { SavingsAccountApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-const api = new SavingsAccountApi(getConfiguration())
 
 interface Note {
   id: number
@@ -42,14 +39,10 @@ const SavingsNotesTab = () => {
     if (!accountId) return
     setLoading(true)
     try {
-      const res = await api.retrieveOne25(
-        Number(accountId),
-        undefined,
-        undefined,
-        'notes'
+      const { data } = await fineract.get(
+        `/v1/savingsaccounts/${accountId}/notes`
       )
-      const data = res?.data as Record<string, unknown> | undefined
-      setNotes((data?.notes as Note[]) || [])
+      setNotes(Array.isArray(data) ? data : [])
     } catch (e) {
       console.error('Failed to load notes', e)
     } finally {
@@ -65,12 +58,9 @@ const SavingsNotesTab = () => {
     if (!accountId || !newNote.trim()) return
     setAdding(true)
     try {
-      const resp = await fetch(`/api/v1/savingsaccounts/${accountId}/notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ note: newNote.trim() }),
+      await fineract.post(`/v1/savingsaccounts/${accountId}/notes`, {
+        note: newNote.trim(),
       })
-      if (!resp.ok) throw new Error(`Add failed: ${resp.status}`)
       setNewNote('')
       await load()
     } catch (e) {
@@ -89,15 +79,10 @@ const SavingsNotesTab = () => {
   const saveEdit = async () => {
     if (!accountId || editingId == null) return
     try {
-      const resp = await fetch(
-        `/api/v1/savingsaccounts/${accountId}/notes/${editingId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ note: editText }),
-        }
+      await fineract.put(
+        `/v1/savingsaccounts/${accountId}/notes/${editingId}`,
+        { note: editText }
       )
-      if (!resp.ok) throw new Error(`Edit failed: ${resp.status}`)
       setEditingId(null)
       setEditText('')
       await load()
@@ -111,11 +96,7 @@ const SavingsNotesTab = () => {
     if (!accountId) return
     if (!confirm('Delete this note?')) return
     try {
-      const resp = await fetch(
-        `/api/v1/savingsaccounts/${accountId}/notes/${noteId}`,
-        { method: 'DELETE' }
-      )
-      if (!resp.ok) throw new Error(`Delete failed: ${resp.status}`)
+      await fineract.delete(`/v1/savingsaccounts/${accountId}/notes/${noteId}`)
       await load()
     } catch (e) {
       console.error(e)

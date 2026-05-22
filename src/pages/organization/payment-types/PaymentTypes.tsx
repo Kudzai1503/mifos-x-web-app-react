@@ -27,15 +27,22 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { PaymentTypeApi, type PaymentTypeData } from '@/fineract-api'
+import fineract from '@/lib/axios'
 import { Pencil, Trash2, Plus, CheckCircle, XCircle } from 'lucide-react'
 
-const api = new PaymentTypeApi(getConfiguration())
+interface PaymentType {
+  id?: number
+  name?: string
+  description?: string
+  codeName?: string
+  isSystemDefined?: boolean
+  isCashPayment?: boolean
+  position?: number
+}
 
 const Payment = () => {
-  const [data, setData] = useState<PaymentTypeData[]>([])
-  const [filtered, setFiltered] = useState<PaymentTypeData[]>([])
+  const [data, setData] = useState<PaymentType[]>([])
+  const [filtered, setFiltered] = useState<PaymentType[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -45,8 +52,8 @@ const Payment = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.getAllPaymentTypes()
-        setData(res.data || [])
+        const { data: result } = await fineract.get('/v1/paymenttypes')
+        setData(result || [])
       } catch (e) {
         console.error('Error fetching payment types', e)
       }
@@ -78,7 +85,7 @@ const Payment = () => {
   // delete payment type
   const handleDelete = async (deleteId: number) => {
     try {
-      await api.deleteCode1(deleteId)
+      await fineract.delete(`/v1/paymenttypes/${deleteId}`)
       setData(prev => prev.filter(item => item.id !== deleteId))
     } catch (err) {
       console.error('Failed to delete Payment Type', err)

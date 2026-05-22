@@ -14,16 +14,21 @@ import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { AccountingClosureApi, type GetGlClosureResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-const closureApi = new AccountingClosureApi(getConfiguration())
+interface GlClosure {
+  id?: number
+  officeId?: number
+  officeName?: string
+  closingDate?: unknown
+  comments?: string
+}
 
 const EditClosure = () => {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [closure, setClosure] = useState<GetGlClosureResponse>()
+  const [closure, setClosure] = useState<GlClosure>()
   const [formData, setFormData] = useState({
     officeId: '',
     closingDate: '',
@@ -43,8 +48,7 @@ const EditClosure = () => {
     if (!id || isNaN(closureId)) return
     ;(async () => {
       try {
-        const res = await closureApi.retreiveClosure(closureId)
-        const c = res.data
+        const { data: c } = await fineract.get(`/v1/glclosures/${id}`)
         setClosure(c)
         setFormData({
           officeId: String(c.officeId ?? c.officeId ?? ''),
@@ -64,7 +68,7 @@ const EditClosure = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await closureApi.updateGLClosure(Number(id), {
+      await fineract.put(`/v1/glclosures/${id}`, {
         comments: formData.comments,
       })
       alert('Closure updated successfully!')

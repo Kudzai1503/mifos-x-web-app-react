@@ -16,24 +16,38 @@ import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import {
-  GeneralLedgerAccountApi,
-  type GetGLAccountsTemplateResponse,
-  type GLAccountData,
-  type CodeValueData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-//gl accounts base api
-const glApi = new GeneralLedgerAccountApi(getConfiguration())
+interface AccountOption {
+  id?: number
+  name?: string
+}
+
+interface CodeOption {
+  id?: number
+  name?: string
+}
+
+interface GlTemplate {
+  accountTypeOptions?: { id?: number; value?: string }[]
+  usageOptions?: { id?: number; value?: string }[]
+  assetHeaderAccountOptions?: AccountOption[]
+  liabilityHeaderAccountOptions?: AccountOption[]
+  equityHeaderAccountOptions?: AccountOption[]
+  expenseHeaderAccountOptions?: AccountOption[]
+  allowedAssetsTagOptions?: CodeOption[]
+  allowedLiabilitiesTagOptions?: CodeOption[]
+  allowedEquityTagOptions?: CodeOption[]
+  allowedIncomeTagOptions?: CodeOption[]
+  allowedExpensesTagOptions?: CodeOption[]
+}
 
 const CreateGlAccounts = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
   //state to store the gl account template
-  const [template, setTemplate] =
-    useState<GetGLAccountsTemplateResponse | null>(null)
+  const [template, setTemplate] = useState<GlTemplate | null>(null)
 
   //state to maintain the form data
   const [formData, setFormData] = useState({
@@ -48,15 +62,15 @@ const CreateGlAccounts = () => {
   })
 
   //state needed for subledger accounts
-  const [parentOptions, setParentOptions] = useState<GLAccountData[]>([])
-  const [tagOptions, setTagOptions] = useState<CodeValueData[]>([])
+  const [parentOptions, setParentOptions] = useState<AccountOption[]>([])
+  const [tagOptions, setTagOptions] = useState<CodeOption[]>([])
 
   //fetch template data
   useEffect(() => {
     const fetchGlAccounts = async () => {
       try {
-        const response = await glApi.retrieveNewAccountDetails()
-        setTemplate(response.data)
+        const { data } = await fineract.get('/v1/glaccounts/template')
+        setTemplate(data)
       } catch (err) {
         console.error('Failed to fetch a GL account', err)
       }
@@ -132,7 +146,7 @@ const CreateGlAccounts = () => {
     }
 
     try {
-      await glApi.createGLAccount1({
+      await fineract.post('/v1/glaccounts', {
         name: formData.name,
         glCode: formData.glCode,
         type: Number(formData.type),
@@ -237,9 +251,7 @@ const CreateGlAccounts = () => {
               selectPlaceholder="Select parent (optional)"
               selectOptions={(parentOptions || [])
                 .filter(
-                  (
-                    option
-                  ): option is GLAccountData & { id: number; name: string } =>
+                  (option): option is { id: number; name: string } =>
                     option.id !== undefined && option.name !== undefined
                 )
                 .map(option => ({
@@ -257,9 +269,7 @@ const CreateGlAccounts = () => {
               selectPlaceholder="Select tag (optional)"
               selectOptions={(tagOptions || [])
                 .filter(
-                  (
-                    option
-                  ): option is CodeValueData & { id: number; name: string } =>
+                  (option): option is { id: number; name: string } =>
                     option.id !== undefined && option.name !== undefined
                 )
                 .map(option => ({

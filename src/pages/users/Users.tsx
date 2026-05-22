@@ -29,23 +29,29 @@ import { Button } from '@/components/ui/button' // button
 import AppSearch from '@/components/custom/search/AppSearch' // search input
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs' // breadcrumb
 
-import { UsersApi, type AppUser, type GetUsersResponse } from '@/fineract-api' // api + types
-import { getConfiguration } from '@/lib/fineract-openapi' // api config
+import fineract from '@/lib/axios'
 
 import { Plus } from 'lucide-react'
 
-const usersApi = new UsersApi(getConfiguration()) // API
+interface AppUser {
+  id?: number
+  username?: string
+  firstname?: string
+  lastname?: string
+  email?: string
+  officeName?: string
+}
 
 const Users = () => {
   const navigate = useNavigate()
-  const [users, setUsers] = useState<GetUsersResponse[] | null>(null) // all users
+  const [users, setUsers] = useState<AppUser[] | null>(null) // all users
   const [searchTerm, setSearchTerm] = useState('') // search query
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await usersApi.retrieveAll41() // api call to fetch users
-        setUsers(res.data)
+        const { data } = await fineract.get('/v1/users')
+        setUsers(data)
       } catch (err) {
         console.error('Failed to fetch User details', err)
       }
@@ -59,7 +65,7 @@ const Users = () => {
   // filter by first/last name
   const filtered =
     users?.filter(
-      (user: AppUser) =>
+      user =>
         (user.firstname?.toLowerCase() ?? '').includes(
           searchTerm.toLowerCase()
         ) ||

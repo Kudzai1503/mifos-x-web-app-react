@@ -286,10 +286,10 @@
     "website": "Sitio web"
   },
   "info": {
-    "appName": "Mifos® X WebApp",
+    "appName": "X-Plug WebApp",
     "fineract": "Fineract:",
     "loggedInAs": "Conectado como",
-    "mifos": "Mifos:"
+    "mifos": "X-Plug:"
   },
   "languages": {
     "en-US": "Inglés",
@@ -328,7 +328,7 @@
     "userManual": "Manual del usuario",
     "users": "Usuarios",
     "workingWithCode": "Trabajar con código",
-    "welcomeHome": "¡Bienvenido a Mifos Home!",
+    "welcomeHome": "¡Bienvenido a X-Plug Home!",
     "checkerInboxAndTasks": "Bandeja de entrada y tareas del revisor",
     "individualCollectionSheet": "Hoja de cobro individual",
     "frequentPostings": "Publicaciones frecuentes",
@@ -394,7 +394,7 @@
     "searchActivityPlaceholder": "Buscar actividad...",
     "selectOption": "Seleccione una opción",
     "themeAndFont": "Tema y fuente",
-    "mifosLogo": "Logo de Mifos",
+    "mifosLogo": "Logo de X-Plug",
     "selectOffice": "Seleccionar oficina",
     "selectLanguage": "Seleccionar idioma",
     "selectFormat": "Seleccionar formato",

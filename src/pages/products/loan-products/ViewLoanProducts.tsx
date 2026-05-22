@@ -5,33 +5,69 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-import { useNavigate as _useNavigate, useParams } from 'react-router-dom' // Reserved for future use: _useNavigate
+import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-
-import { Button as _Button } from '@/components/ui/button' // Reserved for future use: _Button
+import { Banknote, ArrowLeft } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
+import fineract from '@/lib/axios'
 
-import {
-  LoanProductsApi,
-  type GetLoanProductsProductIdResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { Separator } from '@radix-ui/react-separator'
+const bool = (v: unknown) => (
+  <Badge
+    variant="outline"
+    className={
+      v
+        ? 'border-green-300 text-green-700 dark:text-green-400'
+        : 'border-zinc-200 text-zinc-500'
+    }
+  >
+    {v ? 'Yes' : 'No'}
+  </Badge>
+)
 
-const LoanProductApi = new LoanProductsApi(getConfiguration())
+const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
+  <>
+    <dt className="py-2.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+      {label}
+    </dt>
+    <dd className="py-2.5 text-sm text-zinc-800 dark:text-zinc-200">
+      {value ?? '—'}
+    </dd>
+  </>
+)
+
+const Section = ({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) => (
+  <div>
+    <div className="px-6 py-3 border-b border-zinc-100 dark:border-zinc-700/60">
+      <h2 className="text-xs font-semibold uppercase tracking-widest text-primary">
+        {title}
+      </h2>
+    </div>
+    <dl className="px-6 py-2 grid grid-cols-[1fr_1fr] gap-x-8 [&>dt]:border-b [&>dt]:border-zinc-50 dark:[&>dt]:border-zinc-800/50 [&>dd]:border-b [&>dd]:border-zinc-50 dark:[&>dd]:border-zinc-800/50 last:[&>dt]:border-0 last:[&>dd]:border-0">
+      {children}
+    </dl>
+  </div>
+)
 
 const ViewLoanProducts = () => {
   const { id } = useParams()
-  const [loanProduct, setLoanProduct] =
-    useState<GetLoanProductsProductIdResponse | null>(null)
+  const navigate = useNavigate()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [loanProduct, setLoanProduct] = useState<any | null>(null)
 
   useEffect(() => {
     const fetchLoanProduct = async () => {
       try {
-        const response = await LoanProductApi.retrieveLoanProductDetails(
-          Number(id)
-        )
-        setLoanProduct(response.data)
+        const { data } = await fineract.get(`/v1/loanproducts/${id}`)
+        setLoanProduct(data)
       } catch (err) {
         console.error('Failed to fetch loan product', err)
       }
@@ -39,10 +75,32 @@ const ViewLoanProducts = () => {
     fetchLoanProduct()
   }, [id])
 
-  if (!loanProduct) return <div className="p-10 text-center">Loading...</div>
+  if (!loanProduct)
+    return (
+      <div className="flex items-center justify-center min-h-[40vh] text-zinc-400">
+        Loading…
+      </div>
+    )
+
+  const codeLabel = (code?: string) =>
+    code
+      ? (code
+          .split('.')
+          .pop()
+          ?.replace(/^./, (c: string) => c.toUpperCase()) ?? '—')
+      : '—'
+
+  const codePair = (code?: string) =>
+    code
+      ? code
+          .split('.')
+          .slice(-2)
+          .map((w: string) => w.replace(/^./, (c: string) => c.toUpperCase()))
+          .join(' ')
+      : '—'
 
   return (
-    <div className="min-h-screen px-6 py-10 bg-gray-50 dark:bg-zinc-900">
+    <div className="min-h-screen px-6 py-8 max-w-5xl mx-auto">
       <AppBreadCrumbs
         items={[
           { label: 'Home', href: '/home' },
@@ -52,427 +110,252 @@ const ViewLoanProducts = () => {
         ]}
       />
 
-      <div className="bg-white dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700 shadow-sm">
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Details
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Name:
-          </div>
-          <div>{loanProduct.name ?? '—'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Short Name:
-          </div>
-          <div>{loanProduct.shortName ?? '—'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            External Id:
-          </div>
-          <div>{'Missing in openApi'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Include in Customer Loan Counter:
-          </div>
-          <div>{loanProduct.includeInBorrowerCycle ? 'Yes' : 'No'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Start Date:
-          </div>
-          <div>{'Missing in openApi'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Close Date:
-          </div>
-          <div>{'Missing in openApi'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Description:
-          </div>
-          <div>{loanProduct.description ?? '—'}</div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* Currency */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Currency
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Currency:
-          </div>
-          <div>{loanProduct.currency?.code ?? '—'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Currency:
+      {/* Hero header */}
+      <div className="mt-6 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden shadow-sm">
+        <div className="bg-primary px-6 py-5 flex items-center gap-4">
+          <div className="size-12 rounded-full bg-white/20 ring-2 ring-white/30 flex items-center justify-center shrink-0">
+            <Banknote className="h-6 w-6 text-white" />
           </div>
           <div>
-            {loanProduct.currency?.displaySymbol
-              ? `${loanProduct.currency.name} (${loanProduct.currency.displaySymbol})`
-              : (loanProduct.currency?.name ?? '—')}
+            <h1 className="text-xl font-semibold text-white">
+              {loanProduct.name}
+            </h1>
+            <p className="mt-0.5 text-sm text-white/70">
+              Short name:{' '}
+              <span className="font-medium text-white/90">
+                {loanProduct.shortName ?? '—'}
+              </span>
+            </p>
           </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Decimal Places:
-          </div>
-          <div>{loanProduct.currency?.decimalPlaces ?? '—'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Currency in multiples of:
-          </div>
-          <div>{loanProduct.currency?.inMultiplesOf ?? 0}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Installment in multiples of:
-          </div>
-          <div>{'Missing in openApi'}</div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* TERMS */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Terms
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Principal:
-          </div>
-          <div>
-            {loanProduct.principal} (Min {loanProduct.principal} : Max{' '}
-            {loanProduct.principal})
-          </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Allow Approved / Disbursed Amounts Over Applied:
-          </div>
-          <div>
-            {loanProduct.allowApprovedDisbursedAmountsOverApplied
-              ? 'Yes'
-              : 'No'}
-          </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Installment day calculation from:
-          </div>
-          <div>{'No desc in OpenApi'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Number of Repayments:
-          </div>
-          <div>
-            {loanProduct.numberOfRepayments} (Min:{' '}
-            {loanProduct.numberOfRepayments}, Max:{' '}
-            {loanProduct.numberOfRepayments})
-          </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Linked to floating interest rates:
-          </div>
-          <div>
-            {loanProduct.isLinkedToFloatingInterestRates ? 'Yes' : 'No'}
-          </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Nominal interest rate:
-          </div>
-          <div>
-            {loanProduct.interestRatePerPeriod} (Min:{' '}
-            {loanProduct.interestRatePerPeriod}, Max:{' '}
-            {loanProduct.interestRatePerPeriod}){' '}
-            {loanProduct.interestRateFrequencyType?.description}
-          </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Terms vary based on loan cycle:
-          </div>
-          <div>{loanProduct.useBorrowerCycle ? 'Yes' : 'No'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Repay Every:
-          </div>
-          <div>
-            {loanProduct.repaymentEvery}{' '}
-            {loanProduct.repaymentFrequencyType?.code
-              ? loanProduct.repaymentFrequencyType.code
-                  .split('.')
-                  .pop()
-                  ?.replace(/^./, c => c.toUpperCase())
-              : '—'}
+          <div className="ml-auto">
+            <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/20">
+              {loanProduct.accountingRule?.value ?? 'Loan Product'}
+            </Badge>
           </div>
         </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
 
-        {/* SETTINGS */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Settings
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Amortization:
-          </div>
-          <div>
-            {loanProduct.amortizationType?.code
-              ? loanProduct.amortizationType.code
-                  .split('.')
-                  .slice(-2)
-                  .map(word => word.replace(/^./, c => c.toUpperCase()))
-                  .join(' ')
-              : '—'}
-          </div>
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Is Equal Amortization?
-          </div>
-          <div>{loanProduct.amortizationType?.description ? 'Yes' : 'No'}</div>
+        {/* Sections */}
+        <div className="bg-white dark:bg-zinc-900 divide-y divide-zinc-100 dark:divide-zinc-800">
+          <Section title="Details">
+            <Row label="Name" value={loanProduct.name} />
+            <Row label="Short Name" value={loanProduct.shortName} />
+            <Row label="External ID" value={loanProduct.externalId} />
+            <Row
+              label="Include in Customer Loan Counter"
+              value={bool(loanProduct.includeInBorrowerCycle)}
+            />
+            <Row label="Start Date" value={loanProduct.startDate} />
+            <Row label="Close Date" value={loanProduct.closeDate} />
+            <Row label="Description" value={loanProduct.description} />
+          </Section>
 
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Interest Method:
-          </div>
-          <div>
-            {loanProduct.interestType?.code
-              ? loanProduct.interestType.code
-                  .split('.')
-                  .slice(-2)
-                  .map(word => word.replace(/^./, c => c.toUpperCase()))
-                  .join(' ')
-              : '—'}
-          </div>
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
 
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Interest Calculation Period:
-          </div>
-          <div>
-            {loanProduct.interestCalculationPeriodType?.code
-              ? loanProduct.interestCalculationPeriodType.code
-                  .replace('interestCalculationPeriodType.', '')
-                  .split('.')
-                  .map(word => word.replace(/^./, c => c.toUpperCase()))
-                  .join(' ')
-              : '—'}
-          </div>
+          <Section title="Currency">
+            <Row label="Currency Code" value={loanProduct.currency?.code} />
+            <Row
+              label="Currency"
+              value={
+                loanProduct.currency?.displaySymbol
+                  ? `${loanProduct.currency.name} (${loanProduct.currency.displaySymbol})`
+                  : loanProduct.currency?.name
+              }
+            />
+            <Row
+              label="Decimal Places"
+              value={loanProduct.currency?.decimalPlaces}
+            />
+            <Row
+              label="Currency in multiples of"
+              value={loanProduct.currency?.inMultiplesOf ?? 0}
+            />
+            <Row
+              label="Installment in multiples of"
+              value={loanProduct.installmentAmountInMultiplesOf}
+            />
+          </Section>
 
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Allow Partial Interest Calculation with same as repayment:
-          </div>
-          <div>
-            {loanProduct.allowPartialPeriodInterestCalculation ? 'Yes' : 'No'}
-          </div>
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
 
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Is interest recognition on disbursement date?
-          </div>
-          <div>
-            {loanProduct.interestRecognitionOnDisbursementDate ? 'Yes' : 'No'}
-          </div>
+          <Section title="Terms">
+            <Row
+              label="Principal"
+              value={`${loanProduct.principal} (Min: ${loanProduct.minPrincipal ?? loanProduct.principal} – Max: ${loanProduct.maxPrincipal ?? loanProduct.principal})`}
+            />
+            <Row
+              label="Allow Approved / Disbursed Amounts Over Applied"
+              value={bool(loanProduct.allowApprovedDisbursedAmountsOverApplied)}
+            />
+            <Row
+              label="Installment day calculation from"
+              value={loanProduct.repaymentStartDateType?.value}
+            />
+            <Row
+              label="Number of Repayments"
+              value={`${loanProduct.numberOfRepayments} (Min: ${loanProduct.minNumberOfRepayments ?? loanProduct.numberOfRepayments}, Max: ${loanProduct.maxNumberOfRepayments ?? loanProduct.numberOfRepayments})`}
+            />
+            <Row
+              label="Linked to floating interest rates"
+              value={bool(loanProduct.isLinkedToFloatingInterestRates)}
+            />
+            <Row
+              label="Nominal interest rate"
+              value={`${loanProduct.interestRatePerPeriod} (Min: ${loanProduct.minInterestRatePerPeriod ?? loanProduct.interestRatePerPeriod}, Max: ${loanProduct.maxInterestRatePerPeriod ?? loanProduct.interestRatePerPeriod}) ${loanProduct.interestRateFrequencyType?.description ?? ''}`}
+            />
+            <Row
+              label="Terms vary based on loan cycle"
+              value={bool(loanProduct.useBorrowerCycle)}
+            />
+            <Row
+              label="Repay Every"
+              value={`${loanProduct.repaymentEvery} ${codeLabel(loanProduct.repaymentFrequencyType?.code)}`}
+            />
+          </Section>
+
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+          <Section title="Settings">
+            <Row
+              label="Amortization"
+              value={codePair(loanProduct.amortizationType?.code)}
+            />
+            <Row
+              label="Is Equal Amortization?"
+              value={bool(loanProduct.isEqualAmortization)}
+            />
+            <Row
+              label="Interest Method"
+              value={codePair(loanProduct.interestType?.code)}
+            />
+            <Row
+              label="Interest Calculation Period"
+              value={loanProduct.interestCalculationPeriodType?.code
+                ?.replace('interestCalculationPeriodType.', '')
+                .split('.')
+                .map((w: string) =>
+                  w.replace(/^./, (c: string) => c.toUpperCase())
+                )
+                .join(' ')}
+            />
+            <Row
+              label="Allow Partial Interest Calculation with same as repayment"
+              value={bool(loanProduct.allowPartialPeriodInterestCalculation)}
+            />
+            <Row
+              label="Is interest recognition on disbursement date?"
+              value={bool(loanProduct.interestRecognitionOnDisbursementDate)}
+            />
+          </Section>
+
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+          <Section title="Loan Schedule">
+            <Row
+              label="Loan Schedule Type"
+              value={loanProduct.loanScheduleType?.value}
+            />
+            <Row
+              label="Repayment Strategy"
+              value={loanProduct.transactionProcessingStrategyName}
+            />
+          </Section>
+
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+          <Section title="Down Payments">
+            <Row
+              label="Enable Down Payments"
+              value={bool(loanProduct.enableDownPayment)}
+            />
+          </Section>
+
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+          <Section title="Moratorium &amp; Delinquency">
+            <Row
+              label="Delinquency Bucket"
+              value={loanProduct.delinquencyBucket?.name ?? 'Unassigned'}
+            />
+            <Row
+              label="Enable installment level Delinquency"
+              value={bool(loanProduct.enableInstallmentLevelDelinquency)}
+            />
+            <Row
+              label="Days in year"
+              value={codeLabel(loanProduct.daysInYearType?.code)}
+            />
+            <Row
+              label="Days in month"
+              value={codeLabel(loanProduct.daysInMonthType?.code)}
+            />
+            <Row
+              label="Allow fixing of the installment amount"
+              value={bool(loanProduct.canDefineInstallmentAmount)}
+            />
+            <Row
+              label="Account moves out of NPA only after all arrears cleared"
+              value={bool(
+                loanProduct.accountMovesOutOfNPAOnlyOnArrearsCompletion
+              )}
+            />
+            <Row
+              label="Variable Installments allowed"
+              value={bool(loanProduct.allowVariableInstallments)}
+            />
+            <Row
+              label="Allowed to be used for providing Top Up Loans"
+              value={bool(loanProduct.canUseForTopup)}
+            />
+          </Section>
+
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+          <Section title="Interest Recalculation">
+            <Row
+              label="Recalculate Interest"
+              value={bool(loanProduct.isInterestRecalculationEnabled)}
+            />
+          </Section>
+
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+          <Section title="Loan Tranche Details">
+            <Row
+              label="Enable Multiple Disbursals"
+              value={bool(loanProduct.multiDisburseLoan)}
+            />
+          </Section>
+
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+          <Section title="Event Settings">
+            <Row
+              label="Due days for repayment event"
+              value={loanProduct.dueDaysForRepaymentEvent}
+            />
+            <Row
+              label="OverDue days for repayment event"
+              value={loanProduct.overDueDaysForRepaymentEvent}
+            />
+          </Section>
+
+          <Separator className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+          <Section title="Accounting">
+            <Row label="Type" value={loanProduct.accountingRule?.value} />
+          </Section>
         </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
+      </div>
 
-        {/* LOAN SCHEDULE */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Loan Schedule
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Loan Schedule Type:
-          </div>
-          <div>{loanProduct.loanScheduleType?.value ?? '—'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Repayment Strategy:
-          </div>
-          <div className="text-blue-600 hover:underline cursor-pointer">
-            {loanProduct.transactionProcessingStrategyName ?? '—'}
-          </div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* DOWN PAYMENTS */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Down Payments
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Enable Down Payments:
-          </div>
-          <div>{loanProduct.enableDownPayment ? 'Yes' : 'No'}</div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* MORATORIUM */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Moratorium
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Delinquency Bucket:
-          </div>
-          <div>{loanProduct.delinquencyBucket?.name ?? 'Unassigned'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Enable installment level Delinquency:
-          </div>
-          <div>
-            {loanProduct.enableInstallmentLevelDelinquency ? 'Yes' : 'No'}
-          </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Days in year:
-          </div>
-          <div>
-            {loanProduct.daysInYearType?.code
-              ? loanProduct.daysInYearType.code
-                  .split('.')
-                  .pop()
-                  ?.replace(/^./, c => c.toUpperCase())
-              : '—'}
-          </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Days in month:
-          </div>
-          <div>
-            {loanProduct.daysInMonthType?.code
-              ? loanProduct.daysInMonthType.code
-                  .split('.')
-                  .pop()
-                  ?.replace(/^./, c => c.toUpperCase())
-              : '—'}
-          </div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Allow fixing of the installment amount:
-          </div>
-          <div>{loanProduct.canDefineInstallmentAmount ? 'Yes' : 'No'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Account moves out of NPA only after all arrears have been cleared:
-          </div>
-          <div>{'Missing in OpenApi'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Variable Installments allowed:
-          </div>
-          <div>{loanProduct.allowVariableInstallments ? 'Yes' : 'No'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Allowed to be used for providing Top Up Loans:
-          </div>
-          <div>{loanProduct.canUseForTopup ? 'Yes' : 'No'}</div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* INTEREST RECALCULATION */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Interest Recalculation
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Recalculate Interest:
-          </div>
-          <div>{loanProduct.isInterestRecalculationEnabled ? 'Yes' : 'No'}</div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* GUARANTEE REQUIREMENTS */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Guarantee Requirements
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Place Guarantee Funds On-Hold:
-          </div>
-          <div>{'Missing in OpenApi'}</div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* LOAN TRANCHE DETAILS */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Loan Tranche Details
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Enable Multiple Disbursals:
-          </div>
-          <div>{loanProduct.multiDisburseLoan ? 'Yes' : 'No'}</div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* EVENT SETTINGS */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Event Settings
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Use Global Configurations for Repayment Event:
-          </div>
-          {'Missing in OpenApi'}
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Due days for repayment event:
-          </div>
-          <div>{loanProduct.dueDaysForRepaymentEvent ?? '—'}</div>
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            OverDue days for repayment event:
-          </div>
-          <div>{loanProduct.overDueDaysForRepaymentEvent ?? '—'}</div>
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* CONFIGURABLE TERMS AND SETTINGS */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Configurable Terms and Settings
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Allow overriding select terms and settings in loan accounts:
-          </div>
-          {'Missing in OpenApi'}
-
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Amortization:
-          </div>
-          {'Missing in OpenApi'}
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Interest method:
-          </div>
-          {'Missing in OpenApi'}
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Repayment strategy:
-          </div>
-          {'Missing in OpenApi'}
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Interest calculation period:
-          </div>
-          {'Missing in OpenApi'}
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Arrears tolerance:
-          </div>
-          {'Missing in OpenApi'}
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Repaid every:
-          </div>
-          {'Missing in OpenApi'}
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Moratorium:
-          </div>
-          {'Missing in OpenApi'}
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Number of days a loan may be overdue before moving into arrears:
-          </div>
-          {'Missing in OpenApi'}
-        </div>
-        <Separator className="my-6 h-[1px] w-full bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* ACCOUNTING */}
-        <h2 className="text-md font-semibold text-blue-600 mt-5 mb-2 ml-4">
-          Accounting
-        </h2>
-        <div className="p-6 grid grid-cols-2 gap-y-4 text-sm">
-          <div className="font-medium text-zinc-500 dark:text-zinc-400">
-            Type:
-          </div>
-          {'Missing in OpenApi'}
-        </div>
+      <div className="mt-6">
+        <Button
+          variant="outline"
+          onClick={() => navigate('/products/loan-products')}
+          className="cursor-pointer"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1.5" />
+          Back to Loan Products
+        </Button>
       </div>
     </div>
   )

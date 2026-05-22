@@ -8,27 +8,33 @@
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { Button } from '@/components/ui/button'
-import {
-  MappingFinancialActivitiesToAccountsApi,
-  type FinancialActivityAccountData,
-  type FinancialActivityData,
-  type GLAccountData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-// API client
-const financialApi = new MappingFinancialActivitiesToAccountsApi(
-  getConfiguration()
-)
+interface FinancialActivityOption {
+  id?: number
+  name?: string
+  mappedGLAccountType?: string
+}
+
+interface GlAccountOption {
+  id?: number
+  name?: string
+  glCode?: string
+}
+
+interface FinancialActivityTemplate {
+  financialActivityOptions?: FinancialActivityOption[]
+  glAccountOptions?: Record<string, GlAccountOption[]>
+}
 
 const CreateFinancialActivityMappings = () => {
   const navigate = useNavigate()
 
   // Template from server + filtered GL list for the chosen FA
-  const [template, setTemplate] = useState<FinancialActivityAccountData>({})
-  const [glList, setGlList] = useState<GLAccountData[]>([])
+  const [template, setTemplate] = useState<FinancialActivityTemplate>({})
+  const [glList, setGlList] = useState<GlAccountOption[]>([])
 
   // Controlled form state
   const [formData, setFormData] = useState({
@@ -47,8 +53,10 @@ const CreateFinancialActivityMappings = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await financialApi.retrieveTemplate()
-        setTemplate(res?.data ?? {})
+        const { data } = await fineract.get(
+          '/v1/financialactivityaccounts/template'
+        )
+        setTemplate(data ?? {})
       } catch (err) {
         console.error("Couldn't fetch template", err)
       }
@@ -61,13 +69,13 @@ const CreateFinancialActivityMappings = () => {
     setFormData(p => ({ ...p, financialActivityId: val, glAccountId: '' }))
 
     const fa = (template?.financialActivityOptions || []).find(
-      (x: FinancialActivityData) => String(x.id) === String(val)
+      (x: FinancialActivityOption) => String(x.id) === String(val)
     )
     const accountType = fa?.mappedGLAccountType
 
     // pick the right GL array from glAccountOptions map
     const glOptions = template?.glAccountOptions ?? {}
-    let list: GLAccountData[] = []
+    let list: GlAccountOption[] = []
     if (accountType) list = glOptions[accountType] ?? []
 
     setGlList(list)
@@ -80,13 +88,13 @@ const CreateFinancialActivityMappings = () => {
 
   // Build select options for FA and GL
   const faOptions = (template?.financialActivityOptions || []).map(
-    (o: FinancialActivityData) => ({
+    (o: FinancialActivityOption) => ({
       id: String(o.id),
       name: `(${o.id}) ${toTitle(o.name)}`,
     })
   )
 
-  const glSelectOptions = glList.map((o: GLAccountData) => ({
+  const glSelectOptions = glList.map((o: GlAccountOption) => ({
     id: String(o.id),
     name: o.glCode ? `(${o.glCode}) ${o.name}` : (o.name ?? ''),
   }))
@@ -99,7 +107,7 @@ const CreateFinancialActivityMappings = () => {
       return
     }
     try {
-      await financialApi.createGLAccount({
+      await fineract.post('/v1/financialactivityaccounts', {
         financialActivityId: Number(formData.financialActivityId),
         glAccountId: Number(formData.glAccountId),
       })

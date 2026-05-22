@@ -8,6 +8,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 
+import fineract from '@/lib/axios'
+
 import {
   Table,
   TableHeader,
@@ -64,11 +66,10 @@ const SharesAccountGeneralTab = () => {
     if (!sharesAccountId) return
     ;(async () => {
       try {
-        const res = await fetch(
-          `/api/v1/accounts/share/${sharesAccountId}?template=false`
+        const { data } = await fineract.get(
+          `/v1/accounts/share/${sharesAccountId}`
         )
-        const json = await res.json()
-        setData(json || null)
+        setData(data || null)
       } catch (e) {
         console.error('Failed to load shares account', e)
         setData(null)

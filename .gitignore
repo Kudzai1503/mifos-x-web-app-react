@@ -39,3 +39,7 @@ data/
 playwright-report/
 test-results/
 blob-report/
+
+AGENTS.md
+CLAUDE.md
+.claude

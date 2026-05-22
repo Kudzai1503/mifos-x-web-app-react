@@ -6,7 +6,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
+
+import fineract from '@/lib/axios'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
@@ -17,6 +19,12 @@ import { Label } from '@/components/ui/label'
 const SavingsAccountTransactions = () => {
   const { groupId, accountId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // determine command from route path
+  const command = location.pathname.includes('withdrawal')
+    ? 'withdrawal'
+    : 'deposit'
 
   const [transactionDate, setTransactionDate] = useState('')
   const [amount, setAmount] = useState('')
@@ -39,9 +47,30 @@ const SavingsAccountTransactions = () => {
     }
   }
 
-  const onSubmit = () => {
-    // TODO: Call savings account transaction API
-    backToAccount()
+  const onSubmit = async () => {
+    try {
+      const body: Record<string, unknown> = {
+        transactionDate,
+        transactionAmount: Number(amount),
+        paymentTypeId: Number(paymentTypeId),
+        note,
+      }
+      if (showPaymentDetails) {
+        body.accountNumber = accountNumber
+        body.checkNumber = checkNumber
+        body.routingCode = routingCode
+        body.receiptNumber = receiptNumber
+        body.bankNumber = bankNumber
+      }
+      await fineract.post(
+        `/v1/savingsaccounts/${accountId}/transactions?command=${command}`,
+        body
+      )
+      navigate(-1)
+    } catch (e) {
+      console.error('Transaction failed', e)
+      alert('Transaction failed')
+    }
   }
 
   return (
@@ -51,7 +80,10 @@ const SavingsAccountTransactions = () => {
         items={[
           { label: 'Home', href: '/home' },
           { label: 'Groups', href: '/groups' },
-          { label: 'Deposit', current: true },
+          {
+            label: command === 'withdrawal' ? 'Withdrawal' : 'Deposit',
+            current: true,
+          },
         ]}
       />
 
@@ -59,7 +91,9 @@ const SavingsAccountTransactions = () => {
       <div className="max-w-3xl mx-auto">
         <div className="mt-6 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm p-8">
           <h2 className="text-2xl font-semibold mb-6">
-            Deposit Money To Saving Account
+            {command === 'withdrawal'
+              ? 'Withdraw Money From Saving Account'
+              : 'Deposit Money To Saving Account'}
           </h2>
 
           <div className="space-y-6">

@@ -12,22 +12,25 @@ import { faPenToSquare } from '@fortawesome/free-solid-svg-icons'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Button } from '@/components/ui/button'
-import { FundsApi, type FundData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const fundsApi = new FundsApi(getConfiguration())
+interface Fund {
+  id?: number
+  name?: string
+  externalId?: string
+}
 
 const ViewFunds = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [fund, setFund] = useState<FundData>()
+  const [fund, setFund] = useState<Fund>()
 
   // fetch fund details
   useEffect(() => {
     const fetchFund = async () => {
       try {
-        const res = await fundsApi.retrieveFund(Number(id))
-        setFund(res.data)
+        const { data } = await fineract.get(`/v1/funds/${id}`)
+        setFund(data)
       } catch (err) {
         console.error('Failed to fetch fund', err)
       }

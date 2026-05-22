@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
 
   // Fineract backend URL for the Vite dev proxy
   // Default: Fineract Docker container exposes 8443 on host port 3000
-  const fineractUrl = env.VITE_FINERACT_API_URL || 'https://localhost:3000'
+  const fineractUrl = env.VITE_FINERACT_API_URL || 'https://localhost:8443'
 
   return {
     plugins: [react(), tailwindcss()],

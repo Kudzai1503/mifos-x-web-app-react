@@ -29,18 +29,19 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  TaxComponentsApi,
-  type GetTaxesComponentsResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API client for tax components
-const taxApi = new TaxComponentsApi(getConfiguration())
+interface TaxComponent {
+  id: number
+  name?: string
+  percentage?: number
+  startDate?: string
+  creditAccount?: { name?: string }
+}
 
 const ManageTaxComponents = () => {
   // State for tax components
-  const [components, setComponents] = useState<GetTaxesComponentsResponse[]>([])
+  const [components, setComponents] = useState<TaxComponent[]>([])
   // State for search filter
   const [searchTerm, setSearchTerm] = useState('')
   // Pagination states
@@ -53,8 +54,8 @@ const ManageTaxComponents = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await taxApi.retrieveAllTaxComponents() // correct endpoint for tax components
-        setComponents(res.data || [])
+        const { data } = await fineract.get('/v1/taxes/component')
+        setComponents(data || [])
       } catch (err) {
         console.error('Failed to fetch tax components', err)
       }

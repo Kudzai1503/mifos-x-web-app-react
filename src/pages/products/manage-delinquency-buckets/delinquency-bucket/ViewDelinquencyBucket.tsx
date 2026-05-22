@@ -21,29 +21,21 @@ import {
 import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  DelinquencyRangeAndBucketsManagementApi,
-  type DelinquencyBucketData,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-// API instance
-const delinquencyApi = new DelinquencyRangeAndBucketsManagementApi(
-  getConfiguration()
-)
-
 const ViewDelinquencyBucket = () => {
   const navigate = useNavigate()
   const { id } = useParams() // bucket id from route
-  const [buckets, setBuckets] = useState<DelinquencyBucketData>() // state for bucket details
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [buckets, setBuckets] = useState<any>() // state for bucket details
 
   // Handle delete action
   const handleDelete = async () => {
     try {
-      await delinquencyApi.deleteDelinquencyBucket(Number(id))
+      await fineract.delete(`/v1/delinquency/buckets/${id}`)
       navigate('/products/delinquency-bucket-configurations/buckets')
     } catch (err) {
       console.error('Failed to Delete Bucket', err)
@@ -54,8 +46,8 @@ const ViewDelinquencyBucket = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await delinquencyApi.getDelinquencyBucket(Number(id))
-        setBuckets(res.data)
+        const { data } = await fineract.get(`/v1/delinquency/buckets/${id}`)
+        setBuckets(data)
       } catch (err) {
         console.error('Failed to fetch delinquency buckets', err)
       }

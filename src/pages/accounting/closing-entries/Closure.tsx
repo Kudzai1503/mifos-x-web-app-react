@@ -29,17 +29,21 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { AccountingClosureApi, type GetGlClosureResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API client instance
-const closureApi = new AccountingClosureApi(getConfiguration())
+interface GlClosure {
+  id?: number
+  officeName?: string
+  closingDate?: string | number
+  comments?: string
+  createdByUsername?: string
+}
 
 const Closure = () => {
   const navigate = useNavigate()
 
   // Data + UI state
-  const [closures, setClosures] = useState<GetGlClosureResponse[]>([])
+  const [closures, setClosures] = useState<GlClosure[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -48,8 +52,8 @@ const Closure = () => {
   useEffect(() => {
     const fetchClosures = async () => {
       try {
-        const response = await closureApi.retrieveAllClosures()
-        setClosures(response.data || [])
+        const { data } = await fineract.get('/v1/glclosures')
+        setClosures(data || [])
       } catch (err) {
         console.error('Failed to fetch closures', err)
       }

@@ -15,18 +15,7 @@ import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  CurrencyApi,
-  GeneralLedgerAccountApi,
-  JournalEntriesApi,
-  OfficesApi,
-  PaymentTypeApi,
-  type CurrencyData,
-  type GetGLAccountsResponse,
-  type GetOfficesResponse,
-  type GetPaymentTypeData,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCirclePlus, faMinusCircle } from '@fortawesome/free-solid-svg-icons'
@@ -37,21 +26,33 @@ interface glAccounts {
   amount: string
 }
 
-const journalEntryApi = new JournalEntriesApi(getConfiguration())
-const officeApi = new OfficesApi(getConfiguration())
-const currencyApi = new CurrencyApi(getConfiguration())
-const paymentApi = new PaymentTypeApi(getConfiguration())
-const glApi = new GeneralLedgerAccountApi(getConfiguration())
+interface OfficeItem {
+  id?: number
+  name?: string
+}
+interface CurrencyItem {
+  code?: string
+  displayLabel?: string
+}
+interface PaymentTypeItem {
+  id?: number
+  name?: string
+}
+interface GlAccountItem {
+  id?: number
+  name?: string
+  glCode?: string
+}
 
 const CreateJournalEntry = () => {
   const navigate = useNavigate()
 
-  const [offices, setOffices] = useState<GetOfficesResponse[] | null>(null)
-  const [currencies, setCurrencies] = useState<CurrencyData[] | null>(null)
-  const [paymentTypes, setPaymentTypes] = useState<GetPaymentTypeData[] | null>(
+  const [offices, setOffices] = useState<OfficeItem[] | null>(null)
+  const [currencies, setCurrencies] = useState<CurrencyItem[] | null>(null)
+  const [paymentTypes, setPaymentTypes] = useState<PaymentTypeItem[] | null>(
     null
   )
-  const [glAccounts, setGlAccounts] = useState<GetGLAccountsResponse[]>([])
+  const [glAccounts, setGlAccounts] = useState<GlAccountItem[]>([])
 
   const [debits, setDebits] = useState<glAccounts[]>([
     { id: Date.now(), glAccountId: '', amount: '' },
@@ -66,16 +67,12 @@ const CreateJournalEntry = () => {
       try {
         const [officesRes, currenciesRes, paymentTypesRes, glAccountsRes] =
           await Promise.all([
-            officeApi.retrieveOffices(),
-            currencyApi.retrieveCurrencies(),
-            paymentApi.getAllPaymentTypes(),
-            glApi.retrieveAllAccounts(
-              undefined, // type
-              undefined, // searchParam
-              1, // usage
-              true, // manualEntriesAllowed
-              false // disabled
-            ),
+            fineract.get('/v1/offices'),
+            fineract.get('/v1/currencies'),
+            fineract.get('/v1/paymenttypes'),
+            fineract.get('/v1/glaccounts', {
+              params: { usage: 1, manualEntriesAllowed: true, disabled: false },
+            }),
           ])
         setOffices(officesRes.data)
         setCurrencies(currenciesRes.data.selectedCurrencyOptions ?? [])
@@ -175,7 +172,7 @@ const CreateJournalEntry = () => {
     }
 
     try {
-      await journalEntryApi.createGLJournalEntry(undefined, payload)
+      await fineract.post('/v1/journalentries', payload)
       alert('Journal entry created successfully!')
       navigate('/accounting/chart-of-accounts')
     } catch (err) {

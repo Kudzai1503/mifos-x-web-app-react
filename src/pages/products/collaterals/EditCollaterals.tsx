@@ -14,18 +14,19 @@ import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import { CollateralManagementApi, type CurrencyData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-// API instance
-const collateralApi = new CollateralManagementApi(getConfiguration())
+interface CurrencyOption {
+  code?: string
+  name?: string
+}
 
 const EditCollaterals = () => {
   const { id } = useParams()
   const navigate = useNavigate()
 
   // Template data
-  const [template, setTemplate] = useState<CurrencyData[] | null>([])
+  const [template, setTemplate] = useState<CurrencyOption[] | null>([])
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -41,19 +42,21 @@ const EditCollaterals = () => {
     const fetchTemplateAndCollateral = async () => {
       try {
         // Load currencies
-        const res = await collateralApi.getCollateralTemplate()
-        setTemplate(res.data)
+        const templateRes = await fineract.get(
+          '/v1/collateral-management/template'
+        )
+        setTemplate(templateRes.data)
 
         // Load existing collateral if editing
         if (id) {
-          const collateral = await collateralApi.getCollateral(Number(id))
+          const { data } = await fineract.get(`/v1/collateral-management/${id}`)
           setFormData({
-            name: collateral.data.name ?? '',
-            unitType: collateral.data.unitType ?? '',
-            pctToBase: String(collateral.data.pctToBase ?? ''),
-            basePrice: String(collateral.data.basePrice ?? ''),
-            currency: collateral.data.currency ?? '',
-            quality: collateral.data.quality ?? '',
+            name: data.name ?? '',
+            unitType: data.unitType ?? '',
+            pctToBase: String(data.pctToBase ?? ''),
+            basePrice: String(data.basePrice ?? ''),
+            currency: data.currency ?? '',
+            quality: data.quality ?? '',
           })
         }
       } catch (err) {
@@ -77,7 +80,7 @@ const EditCollaterals = () => {
 
     try {
       // Update collateral API call
-      await collateralApi.updateCollateral2(Number(id), {
+      await fineract.put(`/v1/collateral-management/${id}`, {
         name: formData.name,
         unitType: formData.unitType,
         pctToBase: Number(formData.pctToBase),

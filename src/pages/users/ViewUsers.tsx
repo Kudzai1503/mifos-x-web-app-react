@@ -23,12 +23,7 @@ import { Button } from '@/components/ui/button'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import {
-  UsersApi,
-  type GetUsersResponse as _GetUsersResponse, // Reserved for future use
-  type GetUsersUserIdResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -37,19 +32,26 @@ import {
   faTrash,
 } from '@fortawesome/free-solid-svg-icons'
 
-const usersApi = new UsersApi(getConfiguration()) // API
+interface UserDetail {
+  id?: number
+  username?: string
+  firstname?: string
+  lastname?: string
+  email?: string
+  selectedRoles?: { id?: number; name?: string }[]
+}
 
 const ViewUsers = () => {
   const navigate = useNavigate()
   const { id } = useParams() // route param
-  const [users, setUsers] = useState<GetUsersUserIdResponse | null>(null)
+  const [users, setUsers] = useState<UserDetail | null>(null)
 
   // fetch user by id
   useEffect(() => {
     const fetchViewUsers = async () => {
       try {
-        const response = await usersApi.retrieveOne31(Number(id))
-        setUsers(response.data)
+        const { data } = await fineract.get(`/v1/users/${id}`)
+        setUsers(data)
       } catch (err) {
         console.error('Failed to fetch User details', err)
       }

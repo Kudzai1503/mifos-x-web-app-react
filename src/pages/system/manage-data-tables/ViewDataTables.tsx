@@ -29,23 +29,26 @@ import {
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import {
-  DataTablesApi,
-  type GetDataTablesResponse,
-  type ResultsetColumnHeaderData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark } from '@fortawesome/free-solid-svg-icons'
 
-const dataTablesApi = new DataTablesApi(getConfiguration())
+interface ColumnHeader {
+  columnName?: string
+  columnType?: string
+  columnLength?: number
+  columnCode?: string
+  mandatory?: boolean
+  isColumnUnique?: boolean
+  isColumnIndexed?: boolean
+}
 
 const ViewDataTables = () => {
   const { id } = useParams<{ id: string }>()
 
   const [assocWith, setAssocWith] = useState('')
-  const [fields, setFields] = useState<ResultsetColumnHeaderData[]>([])
+  const [fields, setFields] = useState<ColumnHeader[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -55,8 +58,7 @@ const ViewDataTables = () => {
     if (!id) return
     ;(async () => {
       try {
-        const res = await dataTablesApi.getDatatable(id)
-        const data: GetDataTablesResponse = res?.data ?? {}
+        const { data } = await fineract.get(`/v1/datatables/${id}`)
         setAssocWith(
           data.registeredTableName ?? data.applicationTableName ?? ''
         )

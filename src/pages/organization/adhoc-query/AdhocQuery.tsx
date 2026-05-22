@@ -28,16 +28,24 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { AdhocQueryApiApi, type AdHocData } from '@/fineract-api'
+import fineract from '@/lib/axios'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircle } from '@fortawesome/free-solid-svg-icons'
 
-const adhocApi = new AdhocQueryApiApi(getConfiguration())
+interface AdhocQuery {
+  id?: number
+  name?: string
+  query?: string
+  tableName?: string
+  email?: string
+  reportRunFrequency?: string | number
+  isActive?: boolean
+  createdBy?: string
+}
 
 const AdhocQuery = () => {
   const navigate = useNavigate()
-  const [queries, setQueries] = useState<AdHocData[]>([])
+  const [queries, setQueries] = useState<AdhocQuery[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -46,8 +54,8 @@ const AdhocQuery = () => {
   useEffect(() => {
     const fetchQueries = async () => {
       try {
-        const response = await adhocApi.retrieveAll2()
-        setQueries(response.data || [])
+        const { data } = await fineract.get('/v1/adhocquery')
+        setQueries(data || [])
       } catch (err) {
         console.error('Failed to fetch ad-hoc queries', err)
       }

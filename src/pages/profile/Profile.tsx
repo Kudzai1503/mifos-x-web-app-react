@@ -22,10 +22,10 @@ const Profile = () => {
 
       <div className="bg-white dark:bg-zinc-800 shadow-md rounded-lg p-8 max-w-2xl mx-auto">
         <div className="flex mb-6 gap-4">
-          <Button className="bg-[#1074b9] hover:bg-[#1074c9] text-white px-4 py-2">
+          <Button className="bg-primary hover:bg-primary/90 text-white px-4 py-2">
             {t('auth:user.permissions')}
           </Button>
-          <Button className="bg-[#1074b9] hover:bg-[#1074c9] text-white px-4 py-2">
+          <Button className="bg-primary hover:bg-primary/90 text-white px-4 py-2">
             {t('auth:user.changePassword')}
           </Button>
         </div>
@@ -42,7 +42,7 @@ const Profile = () => {
           <div className="text-zinc-600 dark:text-zinc-400">1</div>
 
           <div className="font-medium">{t('auth:user.userName')}</div>
-          <div className="text-zinc-600 dark:text-zinc-400">mifos</div>
+          <div className="text-zinc-600 dark:text-zinc-400">x-plug</div>
 
           <div className="font-medium">{t('common:fields.office')}</div>
           <div className="text-zinc-600 dark:text-zinc-400">Head Office</div>

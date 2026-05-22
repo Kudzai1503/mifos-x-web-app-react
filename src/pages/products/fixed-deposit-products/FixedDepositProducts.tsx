@@ -29,19 +29,16 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  FixedDepositProductApi,
-  type GetFixedDepositProductsResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API instance for Fixed Deposit Products
-const fdApi = new FixedDepositProductApi(getConfiguration())
+interface FixedDepositProduct {
+  id: number
+  name?: string
+  shortName?: string
+}
 
 const FixedDepositProducts = () => {
-  const [products, setProducts] = useState<GetFixedDepositProductsResponse[]>(
-    []
-  )
+  const [products, setProducts] = useState<FixedDepositProduct[]>([])
   const [searchTerm, setSearchTerm] = useState('') // search filter
   const [page, setPage] = useState(1) // pagination page
   const [itemsPerPage, setItemsPerPage] = useState(10) // items shown per page
@@ -51,8 +48,8 @@ const FixedDepositProducts = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fdApi.retrieveAll30() // API call to fetch all FD products
-        setProducts(res.data || [])
+        const { data } = await fineract.get('/v1/fixeddepositproducts')
+        setProducts(data || [])
       } catch (err) {
         console.error('Failed to fetch FD products', err)
       }

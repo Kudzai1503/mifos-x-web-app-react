@@ -10,23 +10,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Trash2 } from 'lucide-react'
-import { CodesApi, type GetCodesResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-const codesApi = new CodesApi(getConfiguration())
-
 const ViewCodes = () => {
   const { id } = useParams()
-  const [codes, setCodes] = useState<GetCodesResponse | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [codes, setCodes] = useState<any | null>(null)
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
     const fetchCodes = async () => {
       try {
-        const res = await codesApi.retrieveCode(Number(id))
-        setCodes(res.data)
+        const { data } = await fineract.get(`/v1/codes/${id}`)
+        setCodes(data)
       } catch (err) {
         console.error('Could not fetch code data', err)
       }

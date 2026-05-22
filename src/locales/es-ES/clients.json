@@ -11,6 +11,7 @@
   "createGuarantor": "Crear garante",
   "errors": {
     "failedApproveClients": "Error al aprobar uno o más clientes.",
+    "failedToLoadClients": "Error al cargar clientes. Por favor, inténtelo de nuevo.",
     "failedLoadCenters": "Error al cargar centros. Por favor, inténtelo de nuevo.",
     "failedLoadGroups": "Error al cargar grupos. Por favor, inténtelo de nuevo.",
     "noClientsSelected": "No se han seleccionado clientes para aprobación."

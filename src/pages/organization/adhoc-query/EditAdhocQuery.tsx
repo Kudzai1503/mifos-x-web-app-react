@@ -5,16 +5,69 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+import { useEffect, useState } from 'react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useNavigate } from 'react-router-dom'
+import AppSelect from '@/components/custom/select/AppSelect'
+import { useNavigate, useParams } from 'react-router-dom'
+import fineract from '@/lib/axios'
 
 const EditAdhocQuery = () => {
   const navigate = useNavigate()
+  const { id } = useParams()
+
+  const [formData, setFormData] = useState({
+    name: '',
+    query: '',
+    tableName: '',
+    tableFields: '',
+    email: '',
+    reportRunFrequency: '',
+    isActive: false,
+  })
+
+  useEffect(() => {
+    const fetchQuery = async () => {
+      try {
+        const { data } = await fineract.get(`/v1/adhocquery/${id}`)
+        setFormData({
+          name: data.name ?? '',
+          query: data.query ?? '',
+          tableName: data.tableName ?? '',
+          tableFields: data.tableFields ?? '',
+          email: data.email ?? '',
+          reportRunFrequency: data.reportRunFrequency?.toString() ?? '',
+          isActive: data.isActive ?? false,
+        })
+      } catch (err) {
+        console.error('Failed to fetch adhoc query', err)
+      }
+    }
+    if (id) fetchQuery()
+  }, [id])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await fineract.put(`/v1/adhocquery/${id}`, {
+        name: formData.name,
+        query: formData.query,
+        tableName: formData.tableName,
+        tableFields: formData.tableFields,
+        email: formData.email || undefined,
+        reportRunFrequency: Number(formData.reportRunFrequency) || undefined,
+        isActive: formData.isActive,
+      })
+      navigate(`/organization/adhoc-query/${id}`)
+    } catch (err) {
+      console.error('Failed to update adhoc query', err)
+      alert('Failed to update adhoc query')
+    }
+  }
 
   return (
     <div className="min-h-screen px-6 py-10 max-w-7xl mx-auto text-[15px]">
@@ -28,51 +81,85 @@ const EditAdhocQuery = () => {
       />
 
       <div className="bg-white dark:bg-zinc-900 rounded-md border p-8 shadow max-w-2xl mx-auto">
-        <h2 className="text-2xl font-semibold mb-6">Create Adhoc Query</h2>
+        <h2 className="text-2xl font-semibold mb-6">Edit Adhoc Query</h2>
 
-        <form className="space-y-6">
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label>Name*</Label>
-            <Input />
+            <Input
+              value={formData.name}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, name: e.target.value }))
+              }
+              required
+            />
           </div>
 
           <div className="space-y-2">
             <Label>SQL Query*</Label>
-            <Input />
+            <Input
+              value={formData.query}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, query: e.target.value }))
+              }
+              required
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Insert into table*</Label>
-            <Input />
+            <Input
+              value={formData.tableName}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, tableName: e.target.value }))
+              }
+              required
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Table Fields*</Label>
-            <Input />
+            <Input
+              value={formData.tableFields}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, tableFields: e.target.value }))
+              }
+              required
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Email</Label>
-            <Input />
+            <Input
+              value={formData.email}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, email: e.target.value }))
+              }
+            />
           </div>
 
-          {/* <AppSelect
-                        selectLabel="Report Run Frequency"
-                        selectValue={formData.reportRunFrequency}
-                        selectPlaceholder="Select frequency"
-                        selectClassname="w-full space-y-2"
-                        selectOnChange={(val) =>
-                            setFormData((prev) => ({ ...prev, reportRunFrequency: val }))
-                        }
-                        selectOptions={[
-                            { id: "daily", name: "Daily" },
-                            { id: "weekly", name: "Weekly" },
-                            { id: "monthly", name: "Monthly" },
-                        ]}
-                    /> */}
+          <AppSelect
+            selectLabel="Report Run Frequency"
+            selectValue={formData.reportRunFrequency}
+            selectPlaceholder="Select frequency"
+            selectClassname="w-full space-y-2"
+            selectOnChange={val =>
+              setFormData(prev => ({ ...prev, reportRunFrequency: val }))
+            }
+            selectOptions={[
+              { id: 'daily', name: 'Daily' },
+              { id: 'weekly', name: 'Weekly' },
+              { id: 'monthly', name: 'Monthly' },
+            ]}
+          />
 
           <div className="flex items-center space-x-3">
-            <Checkbox />
+            <Checkbox
+              checked={formData.isActive}
+              onCheckedChange={val =>
+                setFormData(prev => ({ ...prev, isActive: Boolean(val) }))
+              }
+            />
             <Label className="text-md">Active</Label>
           </div>
 

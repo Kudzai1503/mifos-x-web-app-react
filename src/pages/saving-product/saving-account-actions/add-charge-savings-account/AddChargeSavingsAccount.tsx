@@ -5,18 +5,42 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+
+import fineract from '@/lib/axios'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { Button } from '@/components/ui/button'
+
+interface ChargeOption {
+  id: number | string
+  name: string
+}
 
 const AddChargeSavingsAccount = () => {
   const { groupId, accountId } = useParams()
   const navigate = useNavigate()
 
   const [chargeId, setChargeId] = useState<string>('')
+  const [chargeOptions, setChargeOptions] = useState<ChargeOption[]>([])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const { data } = await fineract.get(
+          `/v1/savingsaccounts/${accountId}/charges/template`
+        )
+        const list = Array.isArray(data?.chargeOptions)
+          ? data.chargeOptions
+          : []
+        setChargeOptions(list)
+      } catch (e) {
+        console.error('Failed to load charge options', e)
+      }
+    })()
+  }, [accountId])
 
   const backToAccount = () => {
     if (groupId && accountId) {
@@ -26,15 +50,17 @@ const AddChargeSavingsAccount = () => {
     }
   }
 
-  const onSubmit = () => {
-    backToAccount()
+  const onSubmit = async () => {
+    try {
+      await fineract.post(`/v1/savingsaccounts/${accountId}/charges`, {
+        chargeId: Number(chargeId),
+      })
+      navigate(-1)
+    } catch (e) {
+      console.error('Add charge failed', e)
+      alert('Add charge failed')
+    }
   }
-
-  const chargeOptions = [
-    { id: '1', name: 'Monthly Fee' },
-    { id: '2', name: 'Dormancy Fee' },
-    { id: '3', name: 'Card Replacement' },
-  ]
 
   return (
     <div className="min-h-screen px-6 py-10">

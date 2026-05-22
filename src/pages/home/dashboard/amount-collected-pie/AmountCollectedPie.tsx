@@ -21,13 +21,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart'
-import { RunReportsApi, OfficesApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { useTranslation } from 'react-i18next'
-
-const runreportApi = new RunReportsApi(getConfiguration())
-const officeApi = new OfficesApi(getConfiguration())
 
 // Glowing vibrant red, blue, and accent tones
 const customColors = [
@@ -56,7 +52,8 @@ const AmountDisbursedPie = () => {
   //api call to fetch the data for the different offices
   useEffect(() => {
     ;(async () => {
-      const res = await officeApi.retrieveOffices()
+      const res =
+        await fineract.get<{ id: number; name: string }[]>('/v1/offices')
       const data = res.data ?? []
       setOfficeData(data.map(o => ({ id: o.id!, name: o.name! })))
     })()
@@ -66,13 +63,9 @@ const AmountDisbursedPie = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await runreportApi.runReport(
-          'Demand Vs Collection',
-          false,
-          {
-            params: { R_officeId: officeId, genericResultSet: false },
-          }
-        )
+        const res = await fineract.get('/v1/runreports/Demand Vs Collection', {
+          params: { R_officeId: officeId, genericResultSet: false },
+        })
 
         const rows: Record<string, unknown>[] = Array.isArray(res.data)
           ? (res.data as Record<string, unknown>[])

@@ -17,27 +17,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  RescheduleLoansApi,
-  type GetLoanRescheduleRequestResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-const rescheduleLoanApi = new RescheduleLoansApi(getConfiguration())
+interface RescheduleLoanItem {
+  id?: number
+  clientName?: string
+  loanAccountNumber?: string
+  rescheduleFromDate?: string
+  rescheduleReasonCodeValue?: { name?: string }
+}
 
 const RescheduleLoan = () => {
-  const [rescheduleLoans, setRescheduleLoans] = useState<
-    GetLoanRescheduleRequestResponse[]
-  >([])
+  const [rescheduleLoans, setRescheduleLoans] = useState<RescheduleLoanItem[]>(
+    []
+  )
   const [search, setSearch] = useState('')
   const [selectedRows, setSelectedRows] = useState<number[]>([])
 
   useEffect(() => {
     const fetchRescheduledLoanDetails = async () => {
       try {
-        const response =
-          await rescheduleLoanApi.retrieveAllRescheduleRequest('pending')
-        setRescheduleLoans(response.data ?? [])
+        const { data } = await fineract.get('/v1/rescheduleloans', {
+          params: { command: 'pending' },
+        })
+        setRescheduleLoans(data ?? [])
       } catch (err) {
         console.error("Couldn't fetch rescheduled loan details", err)
       }

@@ -29,19 +29,15 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  DelinquencyRangeAndBucketsManagementApi,
-  type DelinquencyBucketData,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API instance
-const delinquencyApi = new DelinquencyRangeAndBucketsManagementApi(
-  getConfiguration()
-)
+interface DelinquencyBucket {
+  id: number
+  name?: string
+}
 
 const DelinquencyBucket = () => {
-  const [buckets, setBuckets] = useState<DelinquencyBucketData[]>([]) // all fetched buckets
+  const [buckets, setBuckets] = useState<DelinquencyBucket[]>([]) // all fetched buckets
   const [searchTerm, setSearchTerm] = useState('') // search filter
   const [page, setPage] = useState(1) // current page
   const [itemsPerPage, setItemsPerPage] = useState(10) // pagination size
@@ -51,8 +47,8 @@ const DelinquencyBucket = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await delinquencyApi.getDelinquencyBuckets()
-        setBuckets(res.data || [])
+        const { data } = await fineract.get('/v1/delinquency/buckets')
+        setBuckets(data || [])
       } catch (err) {
         console.error('Failed to fetch delinquency buckets', err)
       }

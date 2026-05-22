@@ -18,14 +18,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 
-import {
-  ClientApi,
-  ClientChargesApi,
-  RunReportsApi,
-  type GetClientsClientIdAccountsResponse,
-  type GetClientsChargesPageItems,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { formatDate } from '@/lib/date-utils'
 import { useTranslation } from 'react-i18next'
 
@@ -40,9 +33,15 @@ import {
   ArrowLeftRight,
 } from 'lucide-react'
 
-const accountsApi = new ClientApi(getConfiguration())
-const chargesApi = new ClientChargesApi(getConfiguration())
-const reportsApi = new RunReportsApi(getConfiguration())
+interface ChargeItem {
+  id?: number
+  name?: string
+  dueDate?: unknown
+  amount?: number
+  amountPaid?: number
+  amountWaived?: number
+  amountOutstanding?: number
+}
 
 interface AccountStatus {
   active?: boolean
@@ -144,15 +143,16 @@ const ClientsGeneralTab = () => {
     ;(async () => {
       // accounts
       try {
-        const res = await accountsApi.retrieveAssociatedAccounts(Number(id))
-        const d: GetClientsClientIdAccountsResponse = res.data ?? {}
+        const res = await fineract.get<{
+          loanAccounts?: AccountRecord[]
+          savingsAccounts?: AccountRecord[]
+        }>(`/v1/clients/${id}/accounts`)
+        const d = res.data ?? {}
         setLoanAccounts(
-          d.loanAccounts ? (Array.from(d.loanAccounts) as AccountRecord[]) : []
+          d.loanAccounts ? (d.loanAccounts as AccountRecord[]) : []
         )
         setSavingsAccounts(
-          d.savingsAccounts
-            ? (Array.from(d.savingsAccounts) as AccountRecord[])
-            : []
+          d.savingsAccounts ? (d.savingsAccounts as AccountRecord[]) : []
         )
         setShareAccounts([])
       } catch {
@@ -163,11 +163,10 @@ const ClientsGeneralTab = () => {
 
       // charges
       try {
-        const chargesRes = await chargesApi.retrieveAllClientCharges(Number(id))
-        const chargeItems: GetClientsChargesPageItems[] = chargesRes.data
-          ?.pageItems
-          ? Array.from(chargesRes.data.pageItems)
-          : []
+        const chargesRes = await fineract.get<{ pageItems?: ChargeItem[] }>(
+          `/v1/clients/${id}/charges`
+        )
+        const chargeItems: ChargeItem[] = chargesRes.data?.pageItems ?? []
         setUpcomingCharges(
           chargeItems.map(ch => ({
             id: ch.id,
@@ -185,10 +184,12 @@ const ClientsGeneralTab = () => {
 
       // performance history (report values as-is)
       try {
-        const r = await reportsApi.runReport('ClientSummaryCounts', false, {
+        const r = await fineract.get('/v1/runreports/ClientSummaryCounts', {
           params: { R_clientId: Number(id), genericResultSet: false },
         })
-        const row = (r?.data?.data?.[0] ?? {}) as Record<string, unknown>
+        const row = (
+          Array.isArray(r.data) ? r.data[0] : (r.data?.data?.[0] ?? {})
+        ) as Record<string, unknown>
         setPerf({
           loanCycle: String(row.loanCycle ?? row['Loan Cycle'] ?? ''),
           activeLoans: String(row.activeLoans ?? row['Active Loans'] ?? ''),
@@ -206,12 +207,14 @@ const ClientsGeneralTab = () => {
 
       // collateral rows (report). we won't re-shape; print what we get.
       try {
-        const rr = await reportsApi.runReport('ClientCollateral', false, {
+        const rr = await fineract.get('/v1/runreports/ClientCollateral', {
           params: { R_clientId: Number(id), genericResultSet: false },
         })
-        const rows: Record<string, unknown>[] = Array.isArray(rr?.data?.data)
-          ? (rr.data.data as unknown as Record<string, unknown>[])
-          : []
+        const rows: Record<string, unknown>[] = Array.isArray(rr.data)
+          ? (rr.data as Record<string, unknown>[])
+          : Array.isArray(rr.data?.data)
+            ? (rr.data.data as Record<string, unknown>[])
+            : []
         setCollaterals(rows)
       } catch {
         setCollaterals([])

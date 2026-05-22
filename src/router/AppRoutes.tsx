@@ -639,7 +639,7 @@ const AppRoutes = () => {
             element={<AccountNumberPreferences />}
           />
           <Route
-            path="//system/account-number-preferences/create"
+            path="/system/account-number-preferences/create"
             element={<CreateAccountNumberPreferences />}
           />
           <Route
@@ -683,119 +683,119 @@ const AppRoutes = () => {
           </Route>
 
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/GoodwillCredit"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/GoodwillCredit"
             element={<MakeRepayment />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/InterestPaymentWaiver"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/InterestPaymentWaiver"
             element={<MakeRepayment />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/PayoutRefund"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/PayoutRefund"
             element={<MakeRepayment />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/MerchantIssuedRefund"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/MerchantIssuedRefund"
             element={<MakeRepayment />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/AddLoanCharge"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/AddLoanCharge"
             element={<AddLoanCharge />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Approve"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Approve"
             element={<ApproveLoan />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/WithdrawnByClient"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/WithdrawnByClient"
             element={<WithdrawByClient />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/AddCollateral"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/AddCollateral"
             element={<AddCollateral />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/ViewGuarantors"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/ViewGuarantors"
             element={<ViewGuarantors />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/CreateGuarantor"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/CreateGuarantor"
             element={<CreateGuarantor />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/LoanScreenReports"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/LoanScreenReports"
             element={<LoanScreenReports />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/AssignLoanOfficer"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/AssignLoanOfficer"
             element={<AssignLoanOfficer />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Disburse"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Disburse"
             element={<Disburse />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/DisbursetoSavings"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/DisbursetoSavings"
             element={<DisburseToSavingsAccount />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/UndoApproval"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/UndoApproval"
             element={<UndoApproval />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Foreclosure"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Foreclosure"
             element={<Foreclosure />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/MakeRepayment"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/MakeRepayment"
             element={<MakeRepayment />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/UndoDisbursal"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/UndoDisbursal"
             element={<UndoDisbursal />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/AddInterestPause"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/AddInterestPause"
             element={<AddInterestPause />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/PrepayLoan"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/PrepayLoan"
             element={<PrepayLoan />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Charge-Off"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Charge-Off"
             element={<ChargeOff />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Re-Age"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Re-Age"
             element={<LoanReaging />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Re-Amortize"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Re-Amortize"
             element={<LoanReamortize />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/WaiveInterest"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/WaiveInterest"
             element={<WaiveInterest />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Reschedule"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Reschedule"
             element={<LoanReschedule />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/WriteOff"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/WriteOff"
             element={<WriteOffPage />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Close-as-Rescheduled"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Close-as-Rescheduled"
             element={<CloseAsRescheduled />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/Close"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/Close"
             element={<LoansAccountClose />}
           />
           <Route
-            path="/clients/:id/loans-accounts/:id/actions/SellLoan"
+            path="/clients/:clientId/loans-accounts/:loanId/actions/SellLoan"
             element={<SellLoan />}
           />
 
@@ -913,119 +913,119 @@ const AppRoutes = () => {
           />
 
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/GoodwillCredit"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/GoodwillCredit"
             element={<MakeRepayment />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/InterestPaymentWaiver"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/InterestPaymentWaiver"
             element={<MakeRepayment />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/PayoutRefund"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/PayoutRefund"
             element={<MakeRepayment />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/MerchantIssuedRefund"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/MerchantIssuedRefund"
             element={<MakeRepayment />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/AddLoanCharge"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/AddLoanCharge"
             element={<AddLoanCharge />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Approve"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Approve"
             element={<ApproveLoan />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/WithdrawnByClient"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/WithdrawnByClient"
             element={<WithdrawByClient />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/AddCollateral"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/AddCollateral"
             element={<AddCollateral />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/ViewGuarantors"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/ViewGuarantors"
             element={<ViewGuarantors />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/CreateGuarantor"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/CreateGuarantor"
             element={<CreateGuarantor />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/LoanScreenReports"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/LoanScreenReports"
             element={<LoanScreenReports />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/AssignLoanOfficer"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/AssignLoanOfficer"
             element={<AssignLoanOfficer />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Disburse"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Disburse"
             element={<Disburse />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/DisbursetoSavings"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/DisbursetoSavings"
             element={<DisburseToSavingsAccount />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/UndoApproval"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/UndoApproval"
             element={<UndoApproval />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Foreclosure"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Foreclosure"
             element={<Foreclosure />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/MakeRepayment"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/MakeRepayment"
             element={<MakeRepayment />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/UndoDisbursal"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/UndoDisbursal"
             element={<UndoDisbursal />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/AddInterestPause"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/AddInterestPause"
             element={<AddInterestPause />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/PrepayLoan"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/PrepayLoan"
             element={<PrepayLoan />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Charge-Off"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Charge-Off"
             element={<ChargeOff />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Re-Age"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Re-Age"
             element={<LoanReaging />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Re-Amortize"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Re-Amortize"
             element={<LoanReamortize />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/WaiveInterest"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/WaiveInterest"
             element={<WaiveInterest />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Reschedule"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Reschedule"
             element={<LoanReschedule />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/WriteOff"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/WriteOff"
             element={<WriteOffPage />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Close-as-Rescheduled"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Close-as-Rescheduled"
             element={<CloseAsRescheduled />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/Close"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/Close"
             element={<LoansAccountClose />}
           />
           <Route
-            path="/groups/:id/loans-accounts/:id/actions/SellLoan"
+            path="/groups/:groupId/loans-accounts/:loanId/actions/SellLoan"
             element={<SellLoan />}
           />
 

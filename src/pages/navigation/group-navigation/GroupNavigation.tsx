@@ -8,17 +8,13 @@
 import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUsers, faCircle } from '@fortawesome/free-solid-svg-icons'
-import { GroupsApi, type GetGroupsGroupIdResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useTranslation } from 'react-i18next'
 
-const groupApi = new GroupsApi(getConfiguration())
-
-/**
- * Extended interface to include fields returned by the Fineract API
- * but missing from the OpenAPI-generated GetGroupsGroupIdResponse type.
- */
-interface ExtendedGroupResponse extends GetGroupsGroupIdResponse {
+interface ExtendedGroupResponse {
+  id?: number
+  name?: string
+  externalId?: string
   accountNo?: string
   status?: { code?: string; description?: string }
   activationDate?: string
@@ -41,8 +37,10 @@ const GroupNavigation = ({ groupId }: GroupNavigationProps) => {
   useEffect(() => {
     const fetchGroup = async () => {
       try {
-        const res = await groupApi.retrieveOne15(groupId)
-        setGroupDetails(res.data as ExtendedGroupResponse)
+        const { data } = await fineract.get<ExtendedGroupResponse>(
+          `/v1/groups/${groupId}`
+        )
+        setGroupDetails(data)
       } catch (err) {
         console.error('Error fetching group data:', err)
       }

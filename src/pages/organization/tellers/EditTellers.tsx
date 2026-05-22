@@ -13,16 +13,12 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
+import fineract from '@/lib/axios'
 
-import {
-  TellerCashManagementApi,
-  OfficesApi,
-  type GetOfficesResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const tellersApi = new TellerCashManagementApi(getConfiguration())
-const officesApi = new OfficesApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+}
 
 // helper: converts [yyyy, mm, dd] array → yyyy-MM-dd
 const toInputDate = (d: unknown): string => {
@@ -37,7 +33,7 @@ const EditTellers = () => {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
 
   const [formData, setFormData] = useState({
     tellerName: '',
@@ -52,11 +48,11 @@ const EditTellers = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const offRes = await officesApi.retrieveOffices()
+        const offRes = await fineract.get('/v1/offices')
         setOffices(offRes.data || [])
 
         if (id) {
-          const tRes = await tellersApi.findTeller(Number(id))
+          const tRes = await fineract.get(`/v1/tellers/${id}`)
           const t = tRes.data ?? {}
           setFormData({
             tellerName: t.name ?? '',
@@ -81,7 +77,7 @@ const EditTellers = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await tellersApi.updateTeller(Number(id), {
+      await fineract.put(`/v1/tellers/${id}`, {
         name: formData.tellerName,
         officeId: Number(formData.officeId),
         description: formData.description || undefined,

@@ -17,43 +17,36 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  LoansApi,
-  BatchAPIApi,
-  type GetLoansLoanIdResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const loanApi = new LoansApi(getConfiguration())
-const batchApi = new BatchAPIApi(getConfiguration())
+interface LoanData {
+  id?: number
+  accountNo?: string
+  clientName?: string
+  loanProductName?: string
+  principal?: number
+  loanPurposeName?: string
+}
 
 const LoanDisbursal = () => {
   const [filter, setFilter] = useState('')
   const [selectedIds, setSelectedIds] = useState<number[]>([])
-  const [groupedLoans, setGroupedLoans] = useState<
-    Record<string, GetLoansLoanIdResponse[]>
-  >({})
+  const [groupedLoans, setGroupedLoans] = useState<Record<string, LoanData[]>>(
+    {}
+  )
   const [hasLoans, setHasLoans] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await loanApi.retrieveAll27(
-          undefined,
-          undefined,
-          1000,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          '200' // status = Approved loans
-        )
+        const { data } = await fineract.get('/v1/loans', {
+          params: { limit: 1000, loanStatus: '200' }, // status = Approved loans
+        })
 
-        const pageItems = (res.data.pageItems ?? []) as GetLoansLoanIdResponse[]
+        const pageItems: LoanData[] = data?.pageItems ?? []
 
         const grouped = pageItems.reduce(
-          (acc: Record<string, GetLoansLoanIdResponse[]>, loan) => {
+          (acc: Record<string, LoanData[]>, loan) => {
             const group = 'Unassigned' // fallback grouping
             if (!acc[group]) acc[group] = []
             acc[group].push(loan)
@@ -78,7 +71,7 @@ const LoanDisbursal = () => {
     )
   }
 
-  const masterToggle = (loans: GetLoansLoanIdResponse[]) => {
+  const masterToggle = (loans: LoanData[]) => {
     const loanIds = loans.map(loan => loan.id!)
     const allSelected = loanIds.every(id => selectedIds.includes(id))
     setSelectedIds(
@@ -113,7 +106,9 @@ const LoanDisbursal = () => {
     }))
 
     try {
-      const _res = await batchApi.handleBatchRequests(batchPayload, true) // Reserved for future use
+      await fineract.post('/v1/batches', batchPayload, {
+        params: { enclosingTransaction: true },
+      })
       alert('Selected loans disbursed successfully.')
       setSelectedIds([])
     } catch (err) {

@@ -12,13 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { DelinquencyRangeAndBucketsManagementApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-// API instance for delinquency ranges/buckets
-const delinquencyApi = new DelinquencyRangeAndBucketsManagementApi(
-  getConfiguration()
-)
+import fineract from '@/lib/axios'
 
 const CreateDelinquencyRange = () => {
   const navigate = useNavigate()
@@ -42,7 +36,7 @@ const CreateDelinquencyRange = () => {
 
     try {
       // Call API to create a delinquency range
-      await delinquencyApi.createDelinquencyRange({
+      await fineract.post('/v1/delinquency/ranges', {
         classification: formData.classification,
         minimumAgeDays: Number(formData.daysFrom),
         maximumAgeDays: Number(formData.daysTo),

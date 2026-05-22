@@ -10,8 +10,12 @@ import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { CurrencyApi, type CurrencyData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
+
+interface Currency {
+  code?: string
+  name?: string
+}
 
 import {
   AlertDialog,
@@ -28,10 +32,8 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTrash } from '@fortawesome/free-solid-svg-icons'
 
-const currenciesApi = new CurrencyApi(getConfiguration())
-
 const ManageCurrencies = () => {
-  const [currencies, setCurrencies] = useState<CurrencyData[]>([])
+  const [currencies, setCurrencies] = useState<Currency[]>([])
   const [selectedCurrency, setSelectedCurrency] = useState<string>('')
   const [activeCurrencies, setActiveCurrencies] = useState<string[]>([])
 
@@ -39,11 +41,11 @@ const ManageCurrencies = () => {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await currenciesApi.retrieveCurrencies()
-        setCurrencies(res.data?.currencyOptions ?? [])
+        const { data } = await fineract.get('/v1/currencies')
+        setCurrencies(data?.currencyOptions ?? [])
         // initialize active list from server
-        const active = (res.data?.selectedCurrencyOptions ?? [])
-          .map(c => c.code ?? '')
+        const active = (data?.selectedCurrencyOptions ?? [])
+          .map((c: Currency) => c.code ?? '')
           .filter(Boolean)
         setActiveCurrencies(active)
       } catch (err) {
@@ -53,7 +55,7 @@ const ManageCurrencies = () => {
   }, [])
 
   const updateCurrencyConfig = async (updatedList: string[]) => {
-    await currenciesApi.updateCurrencies({ currencies: updatedList })
+    await fineract.put('/v1/currencies', { currencies: updatedList })
   }
 
   // add selected currency

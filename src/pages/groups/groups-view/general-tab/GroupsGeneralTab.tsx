@@ -8,12 +8,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import {
-  GroupsApi,
-  RunReportsApi,
-  type GetGroupsGroupIdAccountsResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -27,8 +22,40 @@ import {
 import { Button } from '@/components/ui/button'
 import { Check, Undo2, ArrowUp, ArrowDown, CheckCircle } from 'lucide-react'
 
-const runReportApi = new RunReportsApi(getConfiguration())
-const accountApi = new GroupsApi(getConfiguration())
+interface LoanAccount {
+  id?: number
+  accountNo?: string
+  productName?: string
+  loanType?: { code?: string }
+  status?: {
+    active?: boolean
+    closed?: boolean
+    pendingApproval?: boolean
+    submittedAndPendingApproval?: boolean
+    code?: string
+    value?: string
+  }
+}
+
+interface SavingAccount {
+  id?: number
+  accountNo?: string
+  productName?: string
+  status?: {
+    active?: boolean
+    closed?: boolean
+    submittedAndPendingApproval?: boolean
+    code?: string
+    value?: string
+  }
+}
+
+interface GroupAccounts {
+  loanAccounts?: LoanAccount[]
+  savingsAccounts?: SavingAccount[]
+  memberLoanAccounts?: LoanAccount[]
+  memberSavingsAccounts?: SavingAccount[]
+}
 
 const GroupsGeneralTab = () => {
   const navigate = useNavigate()
@@ -38,8 +65,7 @@ const GroupsGeneralTab = () => {
 
   // State for summary data and accounts
   const [summary, setSummary] = useState<Record<string, unknown>>({})
-  const [accounts, setAccounts] =
-    useState<GetGroupsGroupIdAccountsResponse | null>(null)
+  const [accounts, setAccounts] = useState<GroupAccounts | null>(null)
 
   // toggles for showing closed accounts
   const [showClosedLoanAccounts, setShowClosedLoanAccounts] = useState(false)
@@ -51,16 +77,16 @@ const GroupsGeneralTab = () => {
     ;(async () => {
       try {
         const [summaryRes, accountsRes] = await Promise.all([
-          runReportApi.runReport('GroupSummaryCounts', false, {
+          fineract.get('/v1/runreports/GroupSummaryCounts', {
             params: { R_groupId: Number(id), genericResultSet: false },
           }),
-          accountApi.retrieveAccounts(Number(id)),
+          fineract.get(`/v1/groups/${id}/accounts`),
         ])
         setSummary(
           (summaryRes.data?.data?.[0] as unknown as Record<string, unknown>) ??
             {}
         )
-        setAccounts(accountsRes.data)
+        setAccounts(accountsRes.data as GroupAccounts)
       } catch (e) {
         console.error('Failed to load group details', e)
       }
@@ -68,32 +94,24 @@ const GroupsGeneralTab = () => {
   }, [id])
 
   // organize accounts from response
-  const loanAccounts = Array.from(accounts?.loanAccounts ?? [])
-  const gsimAccounts = Array.from(accounts?.memberSavingsAccounts ?? [])
-  const glimAccounts = Array.from(accounts?.memberLoanAccounts ?? [])
-  const savingAccounts = Array.from(accounts?.savingsAccounts ?? [])
+  const loanAccounts: LoanAccount[] = accounts?.loanAccounts ?? []
+  const gsimAccounts: SavingAccount[] = accounts?.memberSavingsAccounts ?? []
+  const glimAccounts: LoanAccount[] = accounts?.memberLoanAccounts ?? []
+  const savingAccounts: SavingAccount[] = accounts?.savingsAccounts ?? []
 
   // helper to render status dot based on account status flags
-  const statusDot = (acc: { status?: unknown }) => (
+  const statusDot = (acc: { status?: LoanAccount['status'] }) => (
     <span
       className={`inline-block w-3 h-3 rounded-full ${
-        (acc.status as Record<string, unknown> | undefined)?.active
+        acc.status?.active
           ? 'bg-green-500'
-          : (acc.status as Record<string, unknown> | undefined)
-                ?.submittedAndPendingApproval
+          : acc.status?.submittedAndPendingApproval
             ? 'bg-yellow-500'
-            : (acc.status as Record<string, unknown> | undefined)?.closed ||
-                (
-                  (acc.status as Record<string, unknown> | undefined)
-                    ?.code as string
-                )?.includes('withdrawn')
+            : acc.status?.closed || acc.status?.code?.includes('withdrawn')
               ? 'bg-zinc-400'
               : 'bg-sky-500'
       }`}
-      title={
-        ((acc.status as Record<string, unknown> | undefined)
-          ?.value as string) || tc('status.unknown')
-      }
+      title={acc.status?.value || tc('status.unknown')}
     />
   )
 

@@ -14,17 +14,18 @@ import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import { CollateralManagementApi, type CurrencyData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-// API instance
-const collateralApi = new CollateralManagementApi(getConfiguration())
+interface CurrencyOption {
+  code?: string
+  name?: string
+}
 
 const CreateCollaterals = () => {
   const navigate = useNavigate()
 
   // Template data
-  const [template, setTemplate] = useState<CurrencyData[] | null>([])
+  const [template, setTemplate] = useState<CurrencyOption[] | null>([])
 
   // Form state
   const [formData, setFormData] = useState({
@@ -40,8 +41,10 @@ const CreateCollaterals = () => {
   useEffect(() => {
     const fetchTemplate = async () => {
       try {
-        const res = await collateralApi.getCollateralTemplate()
-        setTemplate(res.data)
+        const { data } = await fineract.get(
+          '/v1/collateral-management/template'
+        )
+        setTemplate(data)
       } catch (err) {
         console.error('Failed to fetch collateral template', err)
       }
@@ -63,7 +66,7 @@ const CreateCollaterals = () => {
 
     try {
       // API call to create collateral
-      await collateralApi.createCollateral1({
+      await fineract.post('/v1/collateral-management', {
         name: formData.name,
         unitType: formData.unitType,
         pctToBase: Number(formData.pctToBase),

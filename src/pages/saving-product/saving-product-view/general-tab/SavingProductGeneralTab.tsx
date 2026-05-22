@@ -8,35 +8,69 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
-import {
-  SavingsAccountApi,
-  type SavingsAccountData,
-  type SavingsAccountStatusEnumData,
-  type SavingsAccountSummaryData,
-  type SavingsAccountSubStatusEnumData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
 import { Table, TableBody, TableRow, TableCell } from '@/components/ui/table'
 
-const api = new SavingsAccountApi(getConfiguration())
+interface SavingsAcct {
+  externalId?: string
+  fieldOfficerName?: string
+  nominalAnnualInterestRate?: number
+  activatedOnDate?: unknown
+  allowOverdraft?: boolean
+  overdraftLimit?: number
+  minOverdraftForInterestCalculation?: number
+  minBalanceForInterestCalculation?: number
+  minRequiredBalance?: number
+  enforceMinRequiredBalance?: boolean
+  onHoldFunds?: number
+  withHoldTax?: boolean
+  daysToInactive?: number
+  daysToDormancy?: number
+  daysToEscheat?: number
+  lastActiveTransactionDate?: unknown
+  taxGroup?: unknown
+  withdrawalFee?: { amount?: number }
+  annualFee?: { amount?: number }
+  status?: Record<string, unknown>
+  subStatus?: { id?: number; value?: string }
+  currency?: { code?: string; name?: string }
+  timeline?: Record<string, unknown>
+  summary?: {
+    accountBalance?: number
+    totalDeposits?: number
+    totalWithdrawals?: number
+    totalWithdrawalFees?: number
+    totalAnnualFees?: number
+    totalInterestEarned?: number
+    totalInterestPosted?: number
+    interestNotPosted?: number
+    totalOverdraftInterestDerived?: number
+    lastInterestCalculationDate?: unknown
+  }
+  interestCompoundingPeriodType?: { value?: string }
+  interestPostingPeriodType?: { value?: string }
+  interestCalculationType?: { value?: string }
+  interestCalculationDaysInYearType?: { value?: string }
+  [key: string]: unknown
+}
 
 const SavingProductGeneralTab = () => {
   const { accountId } = useParams()
-  const [acct, setAcct] = useState<SavingsAccountData | null>(null)
+  const [acct, setAcct] = useState<SavingsAcct | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!accountId) return
     ;(async () => {
       try {
-        const res = await api.retrieveOne25(
-          Number(accountId),
-          undefined,
-          undefined,
-          'all'
+        const { data } = await fineract.get(
+          `/v1/savingsaccounts/${accountId}`,
+          {
+            params: { associations: 'all' },
+          }
         )
-        setAcct(res.data)
+        setAcct(data)
       } catch (e) {
         console.error('Could not load savings account', e)
       } finally {
@@ -54,7 +88,7 @@ const SavingProductGeneralTab = () => {
   }
   if (!acct) return null
 
-  const status: SavingsAccountStatusEnumData = acct.status || {}
+  const status = (acct.status || {}) as Record<string, unknown>
   const isRejected = !!status.rejected
   const isPending = !!status.submittedAndPendingApproval
   const isActive = !!status.active
@@ -64,10 +98,11 @@ const SavingProductGeneralTab = () => {
   const currencyName = currency.name || ''
 
   const timeline = acct.timeline || {}
-  const activatedOn = timeline.activatedOnDate ?? acct.activatedOnDate ?? null
+  const activatedOn =
+    (timeline.activatedOnDate as unknown) ?? acct.activatedOnDate ?? null
 
-  const summary: SavingsAccountSummaryData = acct.summary || {}
-  const subStatus: SavingsAccountSubStatusEnumData = acct.subStatus || { id: 0 }
+  const summary = acct.summary || {}
+  const subStatus = acct.subStatus || { id: 0 }
 
   const yesNo = (v?: boolean) => (v ? 'Yes' : 'No')
 

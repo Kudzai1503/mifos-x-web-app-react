@@ -16,20 +16,22 @@ import { Button } from '@/components/ui/button'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
 
-import {
-  StaffApi,
-  UsersApi,
-  type GetUsersTemplateResponse,
-  type StaffData,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const userApi = new UsersApi(getConfiguration())
-const staffApi = new StaffApi(getConfiguration())
+interface UserTemplate {
+  allowedOffices?: { id?: number; name?: string }[]
+  availableRoles?: { id?: number; name?: string }[]
+}
+
+interface StaffItem {
+  id?: number
+  displayName?: string
+  officeId?: number
+}
 
 const CreateUsers = () => {
-  const [users, setUsers] = useState<GetUsersTemplateResponse>()
-  const [staff, setStaff] = useState<StaffData[] | null>(null)
+  const [users, setUsers] = useState<UserTemplate>()
+  const [staff, setStaff] = useState<StaffItem[] | null>(null)
 
   const [formData, setFormData] = useState({
     username: '',
@@ -60,8 +62,8 @@ const CreateUsers = () => {
   useEffect(() => {
     const fetchUserTemplate = async () => {
       try {
-        const res = await userApi.template22()
-        setUsers(res.data)
+        const { data } = await fineract.get('/v1/users/template')
+        setUsers(data)
       } catch (err) {
         console.error('Failed to fetch user template', err)
       }
@@ -74,8 +76,8 @@ const CreateUsers = () => {
     const fetchStaff = async () => {
       if (!formData.office) return
       try {
-        const response = await staffApi.retrieveAll16()
-        setStaff(response.data || [])
+        const { data } = await fineract.get('/v1/staff')
+        setStaff(data || [])
       } catch (err) {
         console.error('Failed to fetch staff', err)
       }

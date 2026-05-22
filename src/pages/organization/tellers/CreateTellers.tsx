@@ -13,21 +13,17 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
+import fineract from '@/lib/axios'
 
-import {
-  TellerCashManagementApi,
-  OfficesApi,
-  type GetOfficesResponse,
-} from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-const _tellersApi = new TellerCashManagementApi(getConfiguration()) // Reserved for future use
-const officesApi = new OfficesApi(getConfiguration())
+interface Office {
+  id?: number
+  name?: string
+}
 
 const CreateTellers = () => {
   const navigate = useNavigate()
 
-  const [offices, setOffices] = useState<GetOfficesResponse[]>([])
+  const [offices, setOffices] = useState<Office[]>([])
 
   const [formData, setFormData] = useState({
     tellerName: '',
@@ -41,8 +37,8 @@ const CreateTellers = () => {
   useEffect(() => {
     const fetchOffices = async () => {
       try {
-        const res = await officesApi.retrieveOffices()
-        setOffices(res.data || [])
+        const { data } = await fineract.get('/v1/offices')
+        setOffices(data || [])
       } catch (err) {
         console.error('Failed to fetch offices', err)
       }
@@ -54,31 +50,30 @@ const CreateTellers = () => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = async (_e: React.FormEvent) => {
-    // Reserved for future use: _e
-    // e.preventDefault();
-    // const { tellerName, officeId, startDate } = formData;
-    // if (!tellerName || !officeId || !startDate) {
-    //   alert("Please fill all required fields.");
-    //   return;
-    // }
-    // try {
-    //   await tellersApi.createTeller({
-    //     name: formData.tellerName,
-    //     officeId: Number(formData.officeId),
-    //     description: formData.description,
-    //     startDate: formData.startDate,
-    //     endDate: formData.endDate || undefined,
-    //     status: formData.status as "ACTIVE" | "INACTIVE",
-    //     locale: "en",
-    //     dateFormat: "yyyy-MM-dd",
-    //   });
-    //   alert("Teller created successfully!");
-    //   navigate("/organization/tellers");
-    // } catch (err) {
-    //   console.error("Failed to create teller", err);
-    //   alert("Failed to create teller");
-    // }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const { tellerName, officeId, startDate } = formData
+    if (!tellerName || !officeId || !startDate) {
+      alert('Please fill all required fields.')
+      return
+    }
+    try {
+      await fineract.post('/v1/tellers', {
+        name: formData.tellerName,
+        officeId: Number(formData.officeId),
+        description: formData.description || undefined,
+        startDate: formData.startDate,
+        endDate: formData.endDate || undefined,
+        status: formData.status as 'ACTIVE' | 'INACTIVE',
+        locale: 'en',
+        dateFormat: 'yyyy-MM-dd',
+      })
+      alert('Teller created successfully!')
+      navigate('/organization/tellers')
+    } catch (err) {
+      console.error('Failed to create teller', err)
+      alert('Failed to create teller')
+    }
   }
 
   return (

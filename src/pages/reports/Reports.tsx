@@ -26,17 +26,21 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { ReportsApi, type GetReportsResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 import { useParams, useNavigate } from 'react-router-dom'
 
-const reportsApi = new ReportsApi(getConfiguration())
+interface ReportItem {
+  id?: number
+  reportName?: string
+  reportType?: string
+  reportCategory?: string
+}
 
 const Reports = () => {
   const { category } = useParams()
   const navigate = useNavigate()
 
-  const [reports, setReports] = useState<GetReportsResponse[]>([])
+  const [reports, setReports] = useState<ReportItem[]>([])
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -46,8 +50,8 @@ const Reports = () => {
     const fetchReports = async () => {
       setLoading(true) // Start the spinner
       try {
-        const response = await reportsApi.retrieveReportList()
-        const details = response.data ?? []
+        const { data } = await fineract.get('/v1/reports')
+        const details: ReportItem[] = data ?? []
 
         if (!category) {
           setReports(details)

@@ -28,15 +28,16 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
+import fineract from '@/lib/axios'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { CurrencyApi, type CurrencyData } from '@/fineract-api'
-
-const currenciesApi = new CurrencyApi(getConfiguration())
+interface Currency {
+  code?: string
+  name?: string
+}
 
 const Currencies = () => {
   const navigate = useNavigate()
-  const [currencies, setCurrencies] = useState<CurrencyData[]>([])
+  const [currencies, setCurrencies] = useState<Currency[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -45,8 +46,8 @@ const Currencies = () => {
   useEffect(() => {
     const fetchCurrencies = async () => {
       try {
-        const response = await currenciesApi.retrieveCurrencies()
-        setCurrencies(response.data.selectedCurrencyOptions ?? [])
+        const { data } = await fineract.get('/v1/currencies')
+        setCurrencies(data.selectedCurrencyOptions ?? [])
       } catch (err) {
         console.error('Failed to fetch currencies', err)
       }

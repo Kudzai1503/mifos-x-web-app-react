@@ -7,19 +7,26 @@
  */
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import type { GetLoansLoanIdResponse } from '@/fineract-api'
-import { LoansApi } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 
-const loansApi = new LoansApi(getConfiguration())
-
-/** Extension for properties not on the generated type but returned at runtime. */
-type ExtendedLoan = GetLoansLoanIdResponse & {
+type ExtendedLoan = {
+  currency?: { code?: string; name?: string }
+  timeline?: {
+    actualDisbursementDate?: string
+    expectedDisbursementDate?: string
+  }
+  loanOfficerName?: string
   loanOfficer?: { displayName?: string }
+  externalId?: string
+  loanPurposeName?: string
   purpose?: { name?: string }
+  proposedPrincipal?: number
+  principal?: number
+  approvedPrincipal?: number
   approvedPrincipalAmount?: number
   principalDisbursed?: number
   disbursedAmount?: number
+  summary?: { totalOverdue?: number }
 }
 
 function formatCurrency(n: number | null | undefined, code: string) {
@@ -67,9 +74,8 @@ const LoansGeneralTab = () => {
     ;(async () => {
       try {
         if (!loanId) return
-        const loanIdNum = Number(loanId)
-        const res = await loansApi.retrieveLoan(loanIdNum)
-        setLoan(res.data as ExtendedLoan)
+        const { data } = await fineract.get(`/v1/loans/${loanId}`)
+        setLoan(data as ExtendedLoan)
       } catch (err) {
         console.error('Failed to fetch loan', err)
       } finally {

@@ -29,18 +29,16 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 
-import { getConfiguration } from '@/lib/fineract-openapi'
-import {
-  RecurringDepositProductApi,
-  type GetRecurringDepositProductsResponse,
-} from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-const rdApi = new RecurringDepositProductApi(getConfiguration())
+interface RecurringDepositProduct {
+  id: number
+  name?: string
+  shortName?: string
+}
 
 const RecurringDepositProducts = () => {
-  const [products, setProducts] = useState<
-    GetRecurringDepositProductsResponse[]
-  >([])
+  const [products, setProducts] = useState<RecurringDepositProduct[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -50,8 +48,8 @@ const RecurringDepositProducts = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await rdApi.retrieveAll32()
-        setProducts(res.data || [])
+        const { data } = await fineract.get('/v1/recurringdepositproducts')
+        setProducts(data || [])
       } catch (err) {
         console.error('Failed to fetch RD products', err)
       }

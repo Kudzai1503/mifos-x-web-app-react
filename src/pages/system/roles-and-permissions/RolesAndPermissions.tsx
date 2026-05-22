@@ -29,17 +29,19 @@ import {
 } from '@/components/ui/select'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { RolesApi, type GetRolesResponse } from '@/fineract-api'
+import fineract from '@/lib/axios'
 
-// API instance
-const rolesApi = new RolesApi(getConfiguration())
+interface Role {
+  id: number
+  name?: string
+  description?: string
+}
 
 const RolesAndPermissions = () => {
   const navigate = useNavigate()
 
   // State
-  const [roles, setRoles] = useState<GetRolesResponse[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -48,8 +50,8 @@ const RolesAndPermissions = () => {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const response = await rolesApi.retrieveAllRoles()
-        setRoles(response.data || [])
+        const { data } = await fineract.get('/v1/roles')
+        setRoles(data || [])
       } catch (err) {
         console.error('Failed to fetch roles', err)
       }

@@ -15,18 +15,15 @@ import { Button } from '@/components/ui/button'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import AppSelect from '@/components/custom/select/AppSelect'
-import { ChargesApi, type ChargeData } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
-
-// API instance
-const chargesApi = new ChargesApi(getConfiguration())
+import fineract from '@/lib/axios'
 
 const EditCharges = () => {
   const navigate = useNavigate()
   const { id } = useParams()
 
   // Template options
-  const [template, setTemplate] = useState<ChargeData>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [template, setTemplate] = useState<any>()
 
   // Form state
   const [formData, setFormData] = useState({
@@ -47,8 +44,7 @@ const EditCharges = () => {
   useEffect(() => {
     const fetchCharge = async () => {
       try {
-        const response = await chargesApi.retrieveCharge(Number(id))
-        const data = response.data
+        const { data } = await fineract.get(`/v1/charges/${id}`)
 
         setFormData({
           id: data.id?.toString() ?? '',
@@ -75,10 +71,10 @@ const EditCharges = () => {
   useEffect(() => {
     const fetchTemplate = async () => {
       try {
-        const response = await chargesApi.retrieveCharge(Number(id), {
+        const { data } = await fineract.get(`/v1/charges/${id}`, {
           params: { template: true },
         })
-        setTemplate(response.data)
+        setTemplate(data)
       } catch (err) {
         console.error('Failed to fetch template', err)
       }
@@ -126,7 +122,7 @@ const EditCharges = () => {
       }
 
       // Call update API
-      await chargesApi.updateCharge(Number(id), payload)
+      await fineract.put(`/v1/charges/${id}`, payload)
 
       alert('Charges updated successfully!')
       navigate('/products/charges')
@@ -172,10 +168,12 @@ const EditCharges = () => {
                 setFormData(prev => ({ ...prev, currency: value }))
               }
               selectPlaceholder="Select currency"
-              selectOptions={(template?.currencyOptions || []).map(option => ({
-                id: option.code!,
-                name: option.name ?? '',
-              }))}
+              selectOptions={(template?.currencyOptions || []).map(
+                (option: { code?: string; name?: string }) => ({
+                  id: option.code!,
+                  name: option.name ?? '',
+                })
+              )}
             />
           </div>
 
@@ -187,7 +185,7 @@ const EditCharges = () => {
               selectOnChange={() => {}}
               selectPlaceholder="Select entity"
               selectOptions={(template?.chargeAppliesToOptions || []).map(
-                option => ({
+                (option: { id?: number; value?: string }) => ({
                   id: option.id!.toString(),
                   name: option.value ?? '',
                 })
@@ -201,7 +199,7 @@ const EditCharges = () => {
               }
               selectPlaceholder="Select time type"
               selectOptions={(template?.loanChargeTimeTypeOptions || []).map(
-                option => ({
+                (option: { id?: number; value?: string }) => ({
                   id: option.id!.toString(),
                   name: option.value ?? '',
                 })
@@ -221,7 +219,7 @@ const EditCharges = () => {
                 }
                 selectPlaceholder="Select payment mode"
                 selectOptions={template.chargePaymetModeOptions!.map(
-                  option => ({
+                  (option: { id?: number; value?: string }) => ({
                     id: option.id!.toString(),
                     name: option.value ?? '',
                   })
@@ -236,7 +234,7 @@ const EditCharges = () => {
               }
               selectPlaceholder="Select calculation"
               selectOptions={(template?.chargeCalculationTypeOptions || []).map(
-                option => ({
+                (option: { id?: number; value?: string }) => ({
                   id: option.id!.toString(),
                   name: option.value ?? '',
                 })

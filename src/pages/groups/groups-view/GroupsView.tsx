@@ -8,9 +8,7 @@
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import Dropdown from '@/components/custom/navbar/Dropdown'
 import AppTabs from '@/components/custom/tabs/AppTabs'
-import { GroupsApi } from '@/fineract-api'
-import type { ExtendedGroupResponse } from '@/pages/groups/types'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import { formatDate } from '@/lib/date-utils'
 import { faCircle, faPeopleGroup } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -19,7 +17,28 @@ import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-const groupsApi = new GroupsApi(getConfiguration())
+interface GroupTimeline {
+  activatedOnDate?: number[]
+}
+
+interface GroupStatus {
+  value?: string
+  code?: string
+}
+
+interface Group {
+  id?: number
+  name?: string
+  staffId?: number
+  staffName?: string
+  centerId?: number
+  active?: boolean
+  status?: GroupStatus
+  timeline?: GroupTimeline
+  clientMembers?: unknown[]
+  collectionMeetingCalendar?: unknown
+  staffOptions?: { id?: number; displayName?: string; name?: string }[]
+}
 
 // TODO: wire this to your real auth/perm source
 const granted = new Set<string>([
@@ -53,21 +72,15 @@ const GroupsView = () => {
   const { id } = useParams()
   const { t, i18n } = useTranslation('groups')
   const { t: tc } = useTranslation('common')
-  const [group, setGroup] = useState<ExtendedGroupResponse>()
+  const [group, setGroup] = useState<Group>()
 
   useEffect(() => {
     ;(async () => {
       try {
-        // bring all associations so we can gate menu items
-        const res = await groupsApi.retrieveOne15(
-          Number(id),
-          undefined,
-          undefined,
-          {
-            params: { associations: 'all' },
-          }
-        )
-        setGroup(res.data as ExtendedGroupResponse)
+        const { data } = await fineract.get(`/v1/groups/${id}`, {
+          params: { associations: 'all' },
+        })
+        setGroup(data as Group)
       } catch (err) {
         console.error('Failed to fetch group', err)
       }

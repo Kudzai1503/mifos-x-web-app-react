@@ -23,25 +23,34 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useEffect, useState } from 'react'
-import { getConfiguration } from '@/lib/fineract-openapi'
-import { type GetNotificationsResponse, NotificationApi } from '@/fineract-api'
+import fineract from '@/lib/axios'
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { useTranslation } from 'react-i18next'
 
-const notiApi = new NotificationApi(getConfiguration())
+interface NotificationItem {
+  id?: number
+  content?: string
+  createdAt?: string
+  isRead?: boolean
+}
+
+interface NotificationsResponse {
+  pageItems?: NotificationItem[]
+  totalFilteredRecords?: number
+}
 
 const Notifications = () => {
   const { t, i18n } = useTranslation('common')
   const [notificationData, setNotificationData] =
-    useState<GetNotificationsResponse | null>(null)
+    useState<NotificationsResponse | null>(null)
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
 
   useEffect(() => {
     const fetchNotificationDetails = async () => {
       try {
-        const response = await notiApi.getAllNotifications()
-        setNotificationData(response.data)
+        const { data } = await fineract.get('/v1/notifications')
+        setNotificationData(data as NotificationsResponse)
       } catch (err) {
         console.error('Failed to fetch Notification Data', err)
       }

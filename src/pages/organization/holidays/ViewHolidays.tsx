@@ -16,8 +16,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { AppBreadCrumbs } from '@/components/custom/breadcrumbs/AppBreadCrumbs'
 import { Button } from '@/components/ui/button'
-import { HolidaysApi, type GetHolidaysResponse } from '@/fineract-api'
-import { getConfiguration } from '@/lib/fineract-openapi'
+import fineract from '@/lib/axios'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -31,19 +30,26 @@ import {
 } from '@/components/ui/alert-dialog'
 import { format } from 'date-fns'
 
-const holidayApi = new HolidaysApi(getConfiguration())
+interface Holiday {
+  id?: number
+  name?: string
+  fromDate?: number[]
+  toDate?: number[]
+  repaymentsRescheduledTo?: number[]
+  status?: { value?: string }
+}
 
 const ViewHolidays = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [holiday, setHoliday] = useState<GetHolidaysResponse>()
+  const [holiday, setHoliday] = useState<Holiday>()
 
   // fetch holiday details
   useEffect(() => {
     const fetchHoliday = async () => {
       try {
-        const res = await holidayApi.retrieveOne7(Number(id))
-        setHoliday(res.data)
+        const { data } = await fineract.get(`/v1/holidays/${id}`)
+        setHoliday(data)
       } catch (err) {
         console.error('Failed to fetch holiday', err)
       }
@@ -54,7 +60,7 @@ const ViewHolidays = () => {
   // delete holiday
   const handleDelete = async () => {
     try {
-      await holidayApi.delete6(Number(id))
+      await fineract.delete(`/v1/holidays/${id}`)
       navigate('/organization/holidays')
     } catch (err) {
       console.error('Failed to delete Holiday', err)
@@ -64,7 +70,7 @@ const ViewHolidays = () => {
   // enable holiday
   const handleEnable = async () => {
     try {
-      await holidayApi.handleCommands1(Number(id), {}, 'activate')
+      await fineract.post(`/v1/holidays/${id}?command=activate`, {})
       navigate('/organization/holidays')
     } catch (err) {
       console.error('Failed to enable Holiday', err)
